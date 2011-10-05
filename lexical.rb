@@ -39,7 +39,7 @@ module Moonr
     #    <TAB> <VT> <FF> <SP> <NBSP> <BOM> <USP>
     rule(:whitespace) { str("\u0009") | str("\u000B") | str("\u000c") | str("\u0020") | str("\u00A0") | str("\uFEFF") }
     rule(:ws) { ( whitespace | line_term | comment ).repeat }
-    rule(:nl_ws) { ( whitespace | sline_comment | multilinecomment_nl).repeat }
+    rule(:nl_ws) { ( whitespace | sline_comment | multilinecomment_nl ).repeat }
     rule(:eof) { any.absent? }
 
 
@@ -99,7 +99,7 @@ module Moonr
     
     # token
     rule(:token) { identifier_name | punctuator | numericliteral | stringliteral }
-    rule(:identifier) { reservedword.absent? >> identifier_name }
+    rule(:identifier) { ( reservedword >> identifier_start.absent? ).absent? >> identifier_name }
     rule(:identifier_name) { identifier_start  >> identifier_part.repeat }
     rule(:identifier_start) { unicodeletter | str('$') | str('_') | str('\\') >> unicode_escape_seq }
     
@@ -160,7 +160,7 @@ module Moonr
 
 
     # Numberic literal
-    rule(:numericliteral) { decimal_literal | hex_integer_literal }
+    rule(:numericliteral) { hex_integer_literal | decimal_literal }
     rule(:decimal_literal) { 
       str('.') >> decimal_digits >> exponent_part? |
       decimalinteger_literal >> str('.') >> decimal_digits? >> exponent_part? |
@@ -185,20 +185,24 @@ module Moonr
     rule(:hex_digit) { oneof %w{ 0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F} }
 
     
-    rule(:string_literal) { str('"') >> doublestring_chars? >> str('"') | str("'") >> singlestring_chars? >> str("'") }
+    rule(:string_literal) { 
+      str("'") >> singlestring_chars? >> str("'") |
+      str('"') >> doublestring_chars? >> str('"') 
+      
+    }
     rule(:doublestring_chars) { doublestring_char.repeat }
     rule(:doublestring_chars?) { doublestring_chars.maybe }
     rule(:singlestring_chars) { singlestring_char.repeat }
     rule(:singlestring_chars?) { singlestring_chars.maybe }
     rule(:doublestring_char) {
-      (str('"') | str('\\') | line_term).absent? >> source_char |
-      str("\\") >> escape_seq |
+      ( str('"') | str('\\') | line_term ).absent? >> source_char |
+      str('\\') >> escape_seq |
       line_continuation
     }
     
     rule(:singlestring_char) {
-      (str("\\") | str("'") | line_term).absent? >> source_char |
-      str("\\") >> escape_seq
+      ( str("'") | str('\\') | line_term ).absent? >> source_char |
+      str('\\') >> escape_seq |
       line_continuation
     }
     rule(:line_continuation) { str("\\") >> line_term_seq }

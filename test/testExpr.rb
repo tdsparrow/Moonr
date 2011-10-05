@@ -4,6 +4,20 @@ require 'expression'
 require 'util'
 
 class TestExpr < Parslet::Parser
+  def initialize
+    _ws = self.ws
+    Parslet::Atoms::DSL.send(:define_method, :_ws ){
+      _ws
+    }
+
+    Parslet::Atoms::DSL.class_eval {
+      def +(parslet)
+        self >> _ws >> parslet
+      end
+    }
+    
+  end
+
   include Moonr::Expression
   include Moonr::Util
   
@@ -23,9 +37,14 @@ class TC_Expr < Test::Unit::TestCase
   end
 
   def test_additive_expr
-    @parser.additive_expr.parse('123 + 2  ')
-    @parser.additive_expr.parse('123 + +2  ')
+    @parser.additive_expr.parse('123 + 2')
+    @parser.additive_expr.parse('123 + +2')
     @parser.additive_expr.parse('123+2*3')
+  end
+
+  def test_multi_expr
+    @parser.numericliteral.parse '0x123456789ABCD'
+    @parser.multiplicative_expr.parse '0x123456789ABCD / 0x2000000000000'
   end
 
   def test_shift_expr

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 require 'test/unit'
 $:.unshift File.dirname(File.expand_path(__FILE__))+ "/../"
-require 'regexp'
+require 'lexical'
+require 'util'
 
 class TestReg < Parslet::Parser
-  include Moonr::Regexp
+  include Moonr::Lexical
+  include Moonr::Util
   
-  root :regular_expression_literal
+  root :regular_expr_literal
 
 end
   
@@ -18,7 +20,7 @@ class TC_Regexp < Test::Unit::TestCase
   end
 
   def test_reg_parse 
-    @parser.regular_expression_body.parse('whatever')
+    @parser.regular_expr_body.parse('whatever')
     
     @parser.parse("/w/")
     @parser.parse("/wh[ever]/g")

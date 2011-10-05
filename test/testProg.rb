@@ -14,7 +14,7 @@ class TestProg < Parslet::Parser
         self >> _ws >> parslet
       end
     }
-    
+
   end
 
   include Moonr::Statement
@@ -33,17 +33,12 @@ class TC_Prog < Test::Unit::TestCase
     @parser = TestProg.new
   end
 
-  # Dir.glob("**/*.js") { |file|
-  #   p "Creating case for #{file}"
-  #   define_method("test_" + File.basename(file)) {
-  #     @parser.parse(File.open(file))
-  #   }
+  Dir.glob("**/*.js") { |file|
+    p "Creating case for #{file}"
+    define_method("test_" + File.basename(file)) {
+      @parser.parse(File.open(file))
+    }
 
-  # }
-
-  def test_try
-    @parser.parse  %Q|assertEquals('bar', c(function () { throw 'bar'; }, function (x) { return x; }));|
-
-  end
+  }
 
 end

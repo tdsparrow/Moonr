@@ -31,10 +31,7 @@ module Moonr
     }
 
     rule(:nl_se) {
-      nl_ws >> str(';') 
-      nl_ws >> line_term_seq |
-      nl_ws >> str('}').present? |
-      nl_ws >> eof
+      nl_ws >> ( str(';') | line_term_seq | str('}').present? | eof )
     }
 
     #Statement : 
@@ -56,11 +53,10 @@ module Moonr
     rule(:statement) {
       block |
       variable_state |
-      empty_state |
       expr_state |
       if_state |
       iteration_state |
-      continute_state |
+      continue_state |
       break_state |
       return_state |
       with_state |
@@ -68,6 +64,7 @@ module Moonr
       switch_state |
       throw_state |
       try_state |
+      empty_state |
       debugger_state
     }
 
@@ -82,13 +79,13 @@ module Moonr
     #  Statement
     #  StatementList Statement 
     rule(:state_list) {
-      statement.repeat(1)
+      statement >> ( ws >> statement ).repeat
     }
 
     #VariableStatement :
     #  var VariableDeclarationList ;
     rule(:variable_state) {
-      str('var') + variable_declaration_list >> se
+      str('var') + variable_declaration_list.as(:var_list) >> se.as(:se) 
     }
 
 
@@ -96,33 +93,33 @@ module Moonr
     #  VariableDeclaration
     #  VariableDeclarationList , VariableDeclaration
     rule(:variable_declaration_list) {
-      variable_declaration + ( str(',') + variable_declaration ).repeat
+      variable_declaration >> ( ws >>  str(',') + variable_declaration ).repeat
     }
 
     #VariableDeclarationListNoIn : 
     #  VariableDeclarationNoIn
     #  VariableDeclarationListNoIn , VariableDeclarationNoIn 
     rule(:variable_declaration_list_noin) {
-      variable_declaration_noin + ( str(',') + variable_declaration_noin ).repeat
+      variable_declaration_noin >> ( ws >> str(',') + variable_declaration_noin ).repeat
     }
 
     #VariableDeclaration :
     #  Identifier Initialiser?
     rule(:variable_declaration) {
-      identifier + initialiser.maybe 
+      identifier >> ( ws >> initialiser).maybe.as(:initialiser) 
     }
 
     #VariableDeclarationNoIn : 
     #  Identifier InitialiserNoInopt
     rule(:variable_declaration_noin) {
-      identifier + initialiser_noin.maybe 
+      identifier >> ( ws >> initialiser_noin).maybe 
     }
 
 
     #Initialiser :
     #  = AssignmentExpression
     rule(:initialiser) {
-      str('=') + assignment_expr 
+      str('=') + assignment_expr.as(:assignment_expr) 
     }
 
 
@@ -180,7 +177,7 @@ module Moonr
     #ContinueStatement : 
     #  continue ;
     #  continue [no LineTerminator here] Identifier ;
-    rule(:continute_state) {
+    rule(:continue_state) {
       str('continue') >> nl_ws >> ( identifier >> se | nl_se )
     }
 
@@ -257,8 +254,8 @@ module Moonr
     #  try Block Finally
     #  try Block Catch Finally
     rule(:try_state) {
-      str('try') + block + ( catch_state + finally.maybe |
-                             finally
+      str('try') + block + ( finally |
+                             catch_state >> ( ws >> finally ).maybe
                              )
     }
 
@@ -297,14 +294,14 @@ module Moonr
     #  Identifier
     #  FormalParameterList , Identifier 
     rule(:formal_paramter_list) {
-      identifier + ( str(',') + identifier ).repeat 
+      identifier >> (ws >> str(',') + identifier ).repeat 
     }
 
 
     #FunctionBody :
     #  SourceElementsopt 
     rule(:function_body) {
-      source_elements.maybe 
+      source_elements.maybe
     }
     
     #Program :
@@ -317,15 +314,16 @@ module Moonr
     #  SourceElement
     #   SourceElements SourceElement
     rule(:source_elements) {
-      source_element + source_element.repeat
+      source_element >> ( ws >> source_element).repeat
     }
 
     #SourceElement : 
     #  Statement
     #  FunctionDeclaration
     rule(:source_element) {
-      statement |
-      function_declaration
+      function_declaration |
+      statement.as(:statement) 
+      
     }
 
   end
