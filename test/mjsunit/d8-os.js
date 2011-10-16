@@ -96,7 +96,7 @@ if (this.os && os.system) {
     os.rmdir("dir4");
     assertThrows("os.chdir('dir4');", "chdir dir4 II");
     // Set umask.
-    var old_umask = os.umask(0777);
+    var old_umask = os.umask(777);
     // Create a dir we cannot read.
     os.mkdirp("dir5");
     // This test fails if you are root since root can read any dir.
