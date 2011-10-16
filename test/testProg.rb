@@ -36,6 +36,7 @@ class TC_Prog < Test::Unit::TestCase
   Dir.glob("**/*.js") { |file|
     p "Creating case for #{file}"
     define_method("test_" + File.basename(file)) {
+      p "Running case #{@__name__}"
       @parser.parse(File.open(file))
     }
 

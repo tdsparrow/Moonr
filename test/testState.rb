@@ -1,27 +1,9 @@
 require 'test/unit'
 $:.unshift File.dirname(File.expand_path(__FILE__))+ "/../"
-require 'expression'
-require 'statement'
-require 'util'
+$:.unshift File.dirname(File.expand_path(__FILE__))
+require 'testBase'
 
-class TestState < Parslet::Parser
-  def initialize
-    _ws = self.ws
-    Parslet::Atoms::DSL.send(:define_method, :_ws ){
-      _ws
-    }
-
-    Parslet::Atoms::DSL.class_eval {
-      def +(parslet)
-        self >> _ws >> parslet
-      end
-    }
-    
-  end
-
-  include Moonr::Statement
-  include Moonr::Expression
-  include Moonr::Util
+class TestState < TestBase
   
   root :statement
 end
@@ -56,6 +38,7 @@ class TC_State < Test::Unit::TestCase
   end
 
   def test_try_state
+    p @parser.expr.parse %Q|r = f()|
     @parser.try_state.parse %Q|try { r = f(); } catch (o) { return g(o); }finally { return 2; }|
     @parser.try_state.parse %Q|try {
       if (i == iter) gc();
@@ -92,7 +75,9 @@ class TC_State < Test::Unit::TestCase
       if (i == iter) gc();
     }
   }|
-  end
+
+    @parser.iteration_state.parse %Q|for(i = 0; i < a.length; i++) result.push(a[i]);|
+    end
 
   def test_while_state 
     @parser.block.parse %Q|{
@@ -189,5 +174,25 @@ for (var n in a) {
     @parser.nl_se.parse " ;"
     @parser.continue_state.parse "continue;"
   end
+
+
+  def test_switch_state
+    @parser.switch_state.parse %Q[switch (event_data.script().compilationType()) {
+          case Debug.ScriptCompilationType.Host:
+            host_compilations++;
+            break;
+          case Debug.ScriptCompilationType.Eval:
+            eval_compilations++;
+            break;
+          default: balbal();
+        }]
+  end
+
+  def test_json
+    puts '"\b\f\n\r\t\"\u2028\/\\"'
+     @parser.string_literal.parse '"\b\f\n\r\t\"\u2028\/\\"'
+
+  end
+
 
 end

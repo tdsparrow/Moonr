@@ -127,7 +127,7 @@ module Moonr
     rule(:punctuator) { oneof %w| { } ( ) [ ] . ; , < > <= >= == != === !== + - * % ++ -- << >> >>> & ^ ! ~ &&  ? : = += -= *= %= <<= >>= >>>= &=  ^= | | str("|") | str("||") | str("|=") }
     rule(:divpunctuator) { oneof %w{ / /= } }
 
-    rule(:literal) { nullliteral | booleanliteral | numericliteral | string_literal | regular_expr_literal }
+    rule(:literal) { nullliteral | booleanliteral | numeric_literal | string_literal | regular_expr_literal }
 
     rule(:nullliteral) { str("null") }
     rule(:booleanliteral) { str("true") | str("false") }
@@ -160,7 +160,7 @@ module Moonr
 
 
     # Numberic literal
-    rule(:numericliteral) { hex_integer_literal | decimal_literal }
+    rule(:numeric_literal) { hex_integer_literal | decimal_literal }
     rule(:decimal_literal) { 
       str('.') >> decimal_digits >> exponent_part? |
       decimalinteger_literal >> str('.') >> decimal_digits? >> exponent_part? |
@@ -195,8 +195,8 @@ module Moonr
     rule(:singlestring_chars) { singlestring_char.repeat }
     rule(:singlestring_chars?) { singlestring_chars.maybe }
     rule(:doublestring_char) {
-      ( str('"') | str('\\') | line_term ).absent? >> source_char |
-      str('\\') >> escape_seq |
+      ( str('"') | str("\\") | line_term ).absent? >> source_char |
+      str("\\") >> escape_seq |
       line_continuation
     }
     
@@ -214,7 +214,7 @@ module Moonr
     }
     
     rule(:char_escape_seq) { single_escape_char | non_escape_char }
-    rule(:single_escape_char) { oneof %w{  b f n r t v } | str("\\") | str("'") | str('"') }
+    rule(:single_escape_char) { oneof(%w{  b f n r t v }) | str("\\") | str("'") | str('"') }
     rule(:non_escape_char) { source_char >> escape_char.absent? | line_term } 
     rule(:escape_char) { 
       single_escape_char |

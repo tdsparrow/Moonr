@@ -19,11 +19,11 @@ module Moonr
     #     ( Expression )
     rule(:primary_expr) {
       str('this') |
-      str('(') + expr + str(')') |
       identifier |
       literal |
       array_literal.as(:array_literal) |
-      object_literal 
+      object_literal |
+      str('(') + expr + str(')') 
     }
     
     #ArrayLiteral : 
@@ -46,7 +46,7 @@ module Moonr
     #Elision : 
     #  ,
     #  Elision ,
-    rule(:elision) { ( str(',') >>  ws ).repeat(1) }
+    rule(:elision) { str(',') >>( ws >> str(',') ).repeat }
     rule(:elision?) { elision.maybe }
 
     #ObjectLiteral : 
@@ -107,8 +107,8 @@ module Moonr
     #  MemberExpression
     #  new NewExpression
     rule(:new_expr) {
-      str('new') + new_expr |
-      member_expr
+      member_expr |
+      str('new') + new_expr 
     }
 
     #CallExpression : 
@@ -141,7 +141,7 @@ module Moonr
     #  AssignmentExpression
     # ArgumentList , AssignmentExpression
     rule(:argument_list) {
-      assignment_expr >> ( ws >> str(',') + assignment_expr ).repeat 
+      assignment_expr >> ( ws >> str(',') + assignment_expr.as(:argument) ).repeat 
     }
     
     #LeftHandSideExpression : 
@@ -159,9 +159,10 @@ module Moonr
     #  LeftHandSideExpression [no LineTerminator here] ++ 
     #  LeftHandSideExpression [no LineTerminator here] --
     rule(:postfix_expr) {
-      lh_side_expr >> nl_ws >> str('++') |
-      lh_side_expr >> nl_ws >> str('--') |
-      lh_side_expr.as(:lh_side_expr)
+      # lh_side_expr >> nl_ws >> str('++') |
+      # lh_side_expr >> nl_ws >> str('--') |
+      # lh_side_expr.as(:lh_side_expr)
+      lh_side_expr >> ( nl_ws >> ( str('++') | str('--') ) ).maybe
     }
 
     #UnaryExpression : 
@@ -347,7 +348,7 @@ module Moonr
     #  LeftHandSideExpression AssignmentOperator AssignmentExpression
     rule(:assignment_expr) {
       lh_side_expr + ( str('=') + assignment_expr | assignment_operator + assignment_expr ) |
-      cond_expr 
+      cond_expr
     }
 
     #AssignmentExpressionNoIn : 
@@ -355,9 +356,8 @@ module Moonr
     #  LeftHandSideExpression = AssignmentExpressionNoIn 
     #  LeftHandSideExpression AssignmentOperator AssignmentExpressionNoIn
     rule(:assignment_expr_noin) {
-      cond_expr_noin |
-      lh_side_expr + str('=') + assignment_expr_noin |
-      lh_side_expr + assignment_operator + assignment_expr_noin
+      lh_side_expr + ( str('=') + assignment_expr_noin | assignment_operator + assignment_expr_noin ) |
+      cond_expr_noin
     }
 
     #AssignmentOperator : one of
