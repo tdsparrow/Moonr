@@ -53,6 +53,7 @@ module Moonr
     rule(:statement) {
       block |
       variable_state |
+      empty_state |
       expr_state |
       if_state |
       iteration_state |
@@ -64,7 +65,6 @@ module Moonr
       switch_state |
       throw_state |
       try_state |
-      empty_state |
       debugger_state
     }
 
@@ -85,7 +85,7 @@ module Moonr
     #VariableStatement :
     #  var VariableDeclarationList ;
     rule(:variable_state) {
-      str('var') + variable_declaration_list.as(:var_list) >> se.as(:se) 
+      ( str('var') | str('const') ) + variable_declaration_list.as(:var_list) >> se.as(:se) 
     }
 
 
@@ -158,7 +158,7 @@ module Moonr
     rule(:iteration_state) {
       str('do') + statement + str('while') + str('(') + expr + str(')') |
       str('while') + str('(') + expr + str(')') + statement |
-      str('for') + str('(') + ( for_clause_c | for_clause_b | for_clause_a ) + str(')') + statement 
+      str('for') + str('(') + ( for_clause_a | for_clause_b | for_clause_c ) + str(')') + statement 
     }
 
     #  for ( ExpressionNoInopt ; Expressionopt ; Expressionopt ) Statement 
@@ -220,7 +220,7 @@ module Moonr
     #  CaseClause
     #  CaseClauses CaseClause
     rule(:case_clauses) {
-      case_clause.repeat
+      case_clause >> ( ws >> case_clause ).repeat
     }
 
     #CaseClause :
