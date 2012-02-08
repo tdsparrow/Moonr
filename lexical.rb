@@ -98,7 +98,7 @@ module Moonr
 
     
     # token
-    rule(:token) { identifier_name | punctuator | numericliteral | stringliteral }
+    rule(:token) { identifier_name | punctuator | numeric_literal | string_literal }
     rule(:identifier) { ( reservedword >> identifier_start.absent? ).absent? >> identifier_name }
     rule(:identifier_name) { identifier_start  >> identifier_part.repeat }
     rule(:identifier_start) { unicodeletter | str('$') | str('_') | str('\\') >> unicode_escape_seq }
@@ -127,7 +127,7 @@ module Moonr
     rule(:punctuator) { oneof %w| { } ( ) [ ] . ; , < > <= >= == != === !== + - * % ++ -- << >> >>> & ^ ! ~ &&  ? : = += -= *= %= <<= >>= >>>= &=  ^= | | str("|") | str("||") | str("|=") }
     rule(:divpunctuator) { oneof %w{ / /= } }
 
-    rule(:literal) { nullliteral | booleanliteral | numeric_literal | string_literal | regular_expr_literal }
+    rule(:literal) { nullliteral | booleanliteral.as(:bool) | numeric_literal.as(:numeric_literal) | string_literal | regular_expr_literal }
 
     rule(:nullliteral) { str("null") }
     rule(:booleanliteral) { str("true") | str("false") }
@@ -160,24 +160,24 @@ module Moonr
 
 
     # Numberic literal
-    rule(:numeric_literal) { hex_integer_literal | decimal_literal }
+    rule(:numeric_literal) { hex_integer_literal.as(:hex_integer) | decimal_literal }
     rule(:decimal_literal) { 
-      str('.') >> decimal_digits >> exponent_part? |
-      decimalinteger_literal >> str('.') >> decimal_digits? >> exponent_part? |
-      decimalinteger_literal >> exponent_part?
+      str('.') >> decimal_digits.as(:decimal_digits) >> exponent_part?.as(:exponent) |
+      decimalinteger_literal.as(:decimal_integer) >> str('.') >> decimal_digits?.as(:decimal_digits) >> exponent_part?.as(:exponent) |
+      decimalinteger_literal.as(:decimal_integer) >> exponent_part?.as(:exponent)
     }
     rule(:decimalinteger_literal) { str('0') | nonzero_digit >> decimal_digits? }
     rule(:decimal_digits) { decimal_digit.repeat }
     rule(:decimal_digits?) { decimal_digits.maybe }
     rule(:decimal_digit) { oneof %w{ 0 1 2 3 4 5 6 7 8 9 } }
     rule(:nonzero_digit) { oneof %w{ 1 2 3 4 5 6 7 8 9 } }
-    rule(:exponent_part) { exponent_indicator >> signed_integer }
+    rule(:exponent_part) { exponent_indicator >> signed_integer.as(:signed_integer) }
     rule(:exponent_part?) { exponent_part.maybe }
     rule(:exponent_indicator) { oneof %w{ e E } }
-    rule(:signed_integer) { 
-      decimal_digits |
+    rule(:signed_integer) {
+      str('-') >> decimal_digits |
       str('+') >> decimal_digits |
-      str('-') >> decimal_digits
+      decimal_digits 
     }
     rule(:hex_integer_literal) { 
       ( str('0x')  | str('0X')  ) >> hex_digit.repeat(1)
@@ -186,44 +186,45 @@ module Moonr
 
     
     rule(:string_literal) { 
-      str("'") >> singlestring_chars? >> str("'") |
-      str('"') >> doublestring_chars? >> str('"') 
+      str("'") >> singlestring_chars?.as(:chars) >> str("'") |
+      str('"') >> doublestring_chars?.as(:chars) >> str('"') 
       
     }
-    rule(:doublestring_chars) { doublestring_char.repeat }
+
+    rule(:doublestring_chars) { doublestring_char.as(:char).repeat }
     rule(:doublestring_chars?) { doublestring_chars.maybe }
-    rule(:singlestring_chars) { singlestring_char.repeat }
+    rule(:singlestring_chars) { singlestring_char.as(:char).repeat }
     rule(:singlestring_chars?) { singlestring_chars.maybe }
     rule(:doublestring_char) {
-      ( str('"') | str("\\") | line_term ).absent? >> source_char |
       str("\\") >> escape_seq |
-      line_continuation
+      ( str('"') | str("\\") | line_term ).absent? >> source_char |
+      line_continuation.as(:line_cont)
     }
     
     rule(:singlestring_char) {
-      ( str("'") | str('\\') | line_term ).absent? >> source_char |
       str('\\') >> escape_seq |
-      line_continuation
+      ( str("'") | str('\\') | line_term ).absent? >> source_char |
+      line_continuation.as(:line_cont)
     }
     rule(:line_continuation) { str("\\") >> line_term_seq }
     rule(:escape_seq) { 
       char_escape_seq |
       str('0')  >> decimal_digit.absent? |
       hex_escape_seq |
-      unicode_escape_seq 
+      unicode_escape_seq
     }
     
-    rule(:char_escape_seq) { single_escape_char | non_escape_char }
-    rule(:single_escape_char) { oneof(%w{  b f n r t v }) | str("\\") | str("'") | str('"') }
-    rule(:non_escape_char) { source_char >> escape_char.absent? | line_term } 
+    rule(:char_escape_seq) { single_escape_char.as(:single_escape) | non_escape_char.as(:non_escape) }
+    rule(:single_escape_char) { oneof(%w{  b f n r t v }) | str("\\") | str("'") | str('"') | str('/') }
+    rule(:non_escape_char) { ( escape_char | line_term ).absent? >> source_char } 
     rule(:escape_char) { 
       single_escape_char |
       decimal_digit |
       str('x') |
       str('u')
     }
-    rule(:hex_escape_seq) { str('x') >> hex_digit.repeat(2,2) }
-    rule(:unicode_escape_seq) { str('u') >> hex_digit.repeat(4,4) }
+    rule(:hex_escape_seq) { str('x') >> hex_digit.repeat(2,2).as(:hex_escape) }
+    rule(:unicode_escape_seq) { str('u') >> hex_digit.repeat(4,4).as(:unicode) }
 
     # Regular expression
     rule(:regular_expr_literal) { str("/") >> regular_expr_body >> str("/") >> regular_expr_flags }

@@ -17,21 +17,21 @@ module Moonr
     #     ArrayLiteral
     #     ObjectLiteral
     #     ( Expression )
-    rule(:primary_expr) {
+    rule(:primary_expr) do
       str('this') |
       identifier |
       literal |
       array_literal.as(:array_literal) |
       object_literal |
       str('(') + expr + str(')') 
-    }
+    end
     
     #ArrayLiteral : 
     #   [ Elision(opt) ]
     #   [ ElementList  ]
     #   [ ElementList , Elision(opt) ]
     rule(:array_literal) { 
-      str('[') + elision? + str(']') |
+      str('[')  + elision? + str(']') |
       str('[') + element_list + ( str(',') + elision? ).maybe + str(']')
     }
 
@@ -40,22 +40,22 @@ module Moonr
     #  Elision(opt) AssignmentExpression
     #  ElementList , Elision(opt) AssignmentExpression
     rule(:element_list) {
-      elision? + assignment_expr >> ( ws >> str(',') + elision? + assignment_expr ).repeat
+      elision? + assignment_expr.as(:assignment) >> ( ws >> str(',') + elision? + assignment_expr.as(:assignment) ).repeat
     }
     
     #Elision : 
     #  ,
     #  Elision ,
     rule(:elision) { str(',') >>( ws >> str(',') ).repeat }
-    rule(:elision?) { elision.maybe }
+    rule(:elision?) { elision.as(:elision).maybe.as(:elisions) }
 
     #ObjectLiteral : 
     #  { }
     #  { PropertyNameAndValueList }
     #  { PropertyNameAndValueList , }
     rule(:object_literal) {
-      str('{') + str('}') |
-      str('{') + property_name_and_val_list + str(',').maybe + str('}') 
+      str('{').as(:lcb) + str('}').as(:rcb) |
+      str('{') + property_name_and_val_list.as(:property_list) + str(',').maybe + str('}') 
     }
   
     #PropertyNameAndValueList : 
@@ -72,7 +72,7 @@ module Moonr
     rule(:property_assignment) {
       str('get') + property_name + str('(') + str(')') + str('{') + function_body + str('}') |
       str('set') + property_name + str('(') + property_set_param_list + str(')') + str('{') + function_body + str('}') |
-      property_name + str(':') + assignment_expr
+      property_name.as(:property_name) + str(':') + assignment_expr.as(:assignment_expr)
 
     }
 
@@ -184,7 +184,7 @@ module Moonr
       str('++') + unary_expr |
       str('--') + unary_expr |
       str('+') + unary_expr |
-      str('-') + unary_expr |
+      str('-').as(:minus) + unary_expr |
       str('~') + unary_expr |
       str('!') + unary_expr
     }

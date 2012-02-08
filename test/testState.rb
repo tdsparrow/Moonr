@@ -190,9 +190,8 @@ for (var n in a) {
 
   def test_json
     puts '"\b\f\n\r\t\"\u2028\/\\"'
-     @parser.string_literal.parse '"\b\f\n\r\t\"\u2028\/\\"'
-
+    puts '"\/"'
+    @parser.string_literal.parse '"\/"'
+    @parser.string_literal.parse '"\b\f\n\r\t\"\u2028\/\\"'
   end
-
-
 end

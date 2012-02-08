@@ -61,7 +61,7 @@ module Moonr
       break_state |
       return_state |
       with_state |
-      labelled_state |
+      labelled_state.as(:label) |
       switch_state |
       throw_state |
       try_state |
@@ -71,7 +71,7 @@ module Moonr
     #Block :
     #  { StatementList? }
     rule(:block) {
-      str('{') + state_list.maybe + str('}')
+      str('{') + state_list.maybe.as(:statements) + str('}')
     }
 
 
@@ -322,7 +322,7 @@ module Moonr
     #  FunctionDeclaration
     rule(:source_element) {
       function_declaration |
-      statement.as(:statement) 
+      statement
       
     }
 

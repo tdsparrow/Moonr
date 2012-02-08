@@ -39,7 +39,7 @@ class TC_Prog < Test::Unit::TestCase
       p "Running case #{@__name__}"
       @parser.parse(File.open(file))
     }
-
+    
   }
 
 end
