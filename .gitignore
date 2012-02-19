@@ -1,1 +1,5 @@
 *~
+coverage/*
+*.swp
+.rbx
+\#*\#

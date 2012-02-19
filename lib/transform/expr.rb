@@ -2,10 +2,15 @@ module Moonr
   class Expr < Parslet::Transform
 
     # Array initialiser
-    rule(:elision => simple(:e) ) { JSArray.new(Array.new(e.to_s.count(','))) }
-    rule(:elisions => simple(:e) ) { e.nil? ?JSArray.new([]):e }
+    rule(:elision => simple(:e) ) { e.to_s.count(',') }
+    rule(:elisions => simple(:e) ) { e.nil? ? 0:e }
     
-    rule(:elisions => simple(:e), :assignment => simple(:a) ) {  e.nil? ? JSArray.new([a]): e << a }
+    rule(:elisions => simple(:e), :assignment => simple(:a) ) do
+      ind = e.nil? ? 0 : e
+      obj = JSArray.new(ind) 
+      obj.def_own_property(ind.to_s, JSDataDescriptor.new(a, true, true, true), false )
+      obj
+    end
     
     rule(:array_literal => sequence(:a) ) {  a.inject(:+) }
     rule(:array_literal => simple(:a) ) { a }

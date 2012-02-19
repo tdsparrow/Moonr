@@ -8,7 +8,7 @@ module Moonr
       instance_eval(&block) if block_given?
     end
 
-    def def_own_property(name, desc, toThrow)
+    def def_own_property(name, desc, to_throw)
       @data[name] = desc
     end
 

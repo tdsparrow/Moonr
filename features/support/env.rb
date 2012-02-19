@@ -1,4 +1,5 @@
-$: << File.expand_path("../../../", __FILE__)
+require 'simplecov'
+SimpleCov.start
 
 require 'rspec'
 require 'rspec-expectations'
