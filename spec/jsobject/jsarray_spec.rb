@@ -21,6 +21,11 @@ describe Moonr::JSArray do
       pending "hold on for array subscription operation"
     end
 
+    it "should create an array with a list of elements" do
+      arr = Moonr::JSArray.new 'a', 'b', 'c'
+      arr.size.should == 3
+    end
+    
     it "should raise RangeError on a large number" do
       pending "type check later"
     end
@@ -28,13 +33,12 @@ describe Moonr::JSArray do
     it "should create a object with default array internal property" do
       @array.clazz.should == "Array"
       @array.extensible.should == true
-      
-    end
+      end
   end
 
   context "#get" do
     it "should support argument length" do
-      @array.get :length
+      @array.get(:length).should == 0
     end
   end
   
