@@ -30,9 +30,17 @@ module Moonr
       self.class.internal_properties.each { |prop,value|  @internal_properties[prop] = value }
 
       create_arr_with_num(*args) || create_arr_with_elem(*args)
-      @properties[:length] = @array.size
+
+      update_length
     end
 
+    def update_length
+      @properties[:length] = JSDataDescriptor.new(:value => @array.size,
+                                                  :writable => true,
+                                                  :enumerable => false,
+                                                  :configurable => false)
+    end
+    
     def size
       @array.size
     end
@@ -64,8 +72,24 @@ module Moonr
       @properties[name.to_sym] = desc
     end
 
+    def get_property(prop)
+      prop = get_own_property(prop)
+      return prop unless prop.undefined?
+
+      proto = prototype
+      return Undefined.new if proto.null?
+      return proto.get_property(prop)
+    end
+    
     def get(prop)
-      @properties[prop]
+      desc = get_property(prop)
+      return Undefined.new if desc.undefined?
+      return desc.value if desc.is_data?
+
+      getter = desc.get
+      return undefined.new if getter.undefined?
+
+      return getter.call(self)
     end
 
     def put(prop, value, to_throw)
@@ -118,7 +142,8 @@ module Moonr
     end
 
     def get_own_property(prop)
-      
+      return Undefined.new unless @properties[prop]
+      return @properties[prop].dup
     end
   end
 end

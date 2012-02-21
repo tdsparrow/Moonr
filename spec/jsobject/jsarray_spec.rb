@@ -38,7 +38,7 @@ describe Moonr::JSArray do
 
   context "#get" do
     it "should support argument length" do
-      @array.get(:length).should == 0
+      @array.get(:length).value.should == 0
     end
   end
   
