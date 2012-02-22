@@ -38,13 +38,14 @@ describe Moonr::JSArray do
 
   context "#get" do
     it "should support argument length" do
-      @array.get(:length).value.should == 0
+      @array.get(:length)[:value].should == 0
     end
   end
   
   context "#put" do
     it "should support length" do
-      @array.put :length, 1, false
+      @array.put :length, 2, false
+      @array.get(:length)[:value].should == 2
     end
   end
 

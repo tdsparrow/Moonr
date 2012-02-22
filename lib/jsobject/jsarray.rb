@@ -70,6 +70,7 @@ module Moonr
 
     def def_own_property(name, desc, to_throw)
       @properties[name.to_sym] = desc
+      p @properties
     end
 
     def get_property(prop)
@@ -97,6 +98,7 @@ module Moonr
       return if not can_put(prop)
 
       own_desc = get_own_property(prop)
+      p own_desc
       if own_desc.is_data?
         value_desc = JSDataDescriptor.new(:value=> value)
         def_own_property(prop, value_desc, to_throw)
@@ -116,6 +118,8 @@ module Moonr
 
     def can_put(prop)
       desc = get_own_property(prop)
+
+      p desc
 
       if not desc.undefined?
         if desc.is_accessor?

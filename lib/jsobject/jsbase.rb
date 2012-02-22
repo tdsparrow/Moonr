@@ -10,8 +10,6 @@ module Moonr
     @internal_properties = []
     
     def self.property(prop)
-      p prop
-      p @properties
       properties << prop
     end
 
