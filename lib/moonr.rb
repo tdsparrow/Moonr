@@ -4,8 +4,10 @@ require 'expression'
 require 'transform/transform'
 require 'jsobject'
 require 'util'
+require 'mixlib/log'
 
 module Moonr
+  class Log; extend Mixlib::Log; end
   class Result
     def initialize ast
       @ast = ast

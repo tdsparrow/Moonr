@@ -31,7 +31,7 @@ module Moonr
     #   [ ElementList  ]
     #   [ ElementList , Elision(opt) ]
     rule(:array_literal) { 
-      str('[')  + elision? + str(']') |
+      str('[').as(:al)  + elision? + str(']').as(:ar) |
       str('[') + element_list + ( str(',') + elision? ).maybe + str(']')
     }
 

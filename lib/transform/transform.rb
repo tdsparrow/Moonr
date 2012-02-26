@@ -8,7 +8,7 @@ module Moonr
     end
 
     def apply(ast)
-      @trans.inject(ast) { |res, t|p res; t.apply res }
+      @trans.inject(ast) { |res, t| Log.info res; t.apply res }
     end
   end
 end

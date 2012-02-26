@@ -1,6 +1,4 @@
 module Moonr
-  class Undefined
-  end
 
   class JSObject
     def initialize(&block)

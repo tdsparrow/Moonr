@@ -5,6 +5,7 @@ require 'rspec'
 require 'rspec-expectations'
 require 'moonr'
 
+Moonr::Log.level = :debug
 module MoonrHelper
   def parse(syntax)
     parser = Moonr::Parser.new.send( syntax.empty? ? :root : syntax.lstrip )

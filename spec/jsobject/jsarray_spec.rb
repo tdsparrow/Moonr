@@ -18,7 +18,7 @@ describe Moonr::JSArray do
     it "should create an array with one non-number paramenter" do
       arr = Moonr::JSArray.new 'a'
       arr.size.should == 1
-      pending "hold on for array subscription operation"
+      arr.get(0).should == 'a'
     end
 
     it "should create an array with a list of elements" do
@@ -33,28 +33,39 @@ describe Moonr::JSArray do
     it "should create a object with default array internal property" do
       @array.clazz.should == "Array"
       @array.extensible.should == true
-      end
+      pending "prototype not implemented and initial length not checked"
+    end
   end
 
   context "#get" do
     it "should support argument length" do
-      @array.get(:length)[:value].should == 0
+      @array.get(:length).should == 0
+    end
+
+    it "should return undefined on property other then length for new Array object" do
+      @array.get(:what).should == Moonr::JSUndefined.inst
     end
   end
   
   context "#put" do
     it "should support length" do
       @array.put :length, 2, false
-      @array.get(:length)[:value].should == 2
+      @array.get(:length).should == 2
     end
   end
 
-  context "#get_own_property" do
-    it "should return undefined on property other then length for new Array object" do
-      @array.get_own_property :what
-    end
-
-    it "should get the value on length property" do
+  context "invariant of relation between length and indexed members" do
+    it "should increase length when new element added" do
+      @array.def_own_property "3", Moonr::JSDataDescriptor.new(3), false
+      @array.get(:length).should == 4
     end
   end
+
+  context "#def_own_property" do
+    it "should be able to add new indexed element" do
+      @array.def_own_property("10", Moonr::JSDataDescriptor.new(10), false)
+      @array.get("10").should == 10
+    end
+  end
+
 end

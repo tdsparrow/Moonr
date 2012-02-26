@@ -1,7 +1,7 @@
 Then /^i get the array with size (\d+)$/ do |size|
   p result
   result.class.should == Moonr::JSArray
-  result.length.should == size.to_i
+  result.get(:length).should == size.to_i
 end
 
 Then /^i get the object with (\d+) properites$/ do |size|
