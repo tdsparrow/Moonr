@@ -22,7 +22,7 @@ module Moonr
       identifier |
       literal |
       array_literal.as(:array_literal) |
-      object_literal |
+      object_literal.as(:obj_literal) |
       str('(') + expr + str(')') 
     end
     
@@ -70,8 +70,8 @@ module Moonr
     #  get PropertyName ( ) { FunctionBody } 
     #  set PropertyName ( PropertySetParameterList ) { FunctionBody }
     rule(:property_assignment) {
-      str('get') + property_name + str('(') + str(')') + str('{') + function_body + str('}') |
-      str('set') + property_name + str('(') + property_set_param_list + str(')') + str('{') + function_body + str('}') |
+      str('get') + property_name.as(:property_name) + str('(') + str(')') + str('{') + function_body.as(:get_body) + str('}') |
+      str('set') + property_name.as(:property_name) + str('(') + property_set_param_list.as(:param_list) + str(')') + str('{') + function_body.as(:set_body) + str('}') |
       property_name.as(:property_name) + str(':') + assignment_expr.as(:assignment_expr)
 
     }
@@ -100,14 +100,14 @@ module Moonr
       ( primary_expr | function_expr | member_expr_b ) >> ( ws >> subscription_expr | field_expr ).repeat
     }
     rule(:member_expr_b) {
-      str('new') + member_expr + arguments
+      str('new') + member_expr.as(:member_expr) + arguments
     }
     
     #NewExpression : 
     #  MemberExpression
     #  new NewExpression
     rule(:new_expr) {
-      member_expr |
+      member_expr.as(:member_expr) |
       str('new') + new_expr 
     }
 
@@ -117,15 +117,15 @@ module Moonr
     #  CallExpression [ Expression ] 
     #  CallExpression . IdentifierName
     rule(:call_expr) {
-      member_expr + arguments >> ( ws >> ( arguments | subscription_expr | field_expr ) ).repeat
+      member_expr.as(:member_expr) + arguments >> ( ws >> ( arguments | subscription_expr | field_expr ) ).repeat
     }
     # [ Expression ]
     rule(:subscription_expr) {
-      str('[') + expr + str(']')
+      str('[') + expr.as(:subscription) + str(']')
     }
     # . IdentifierName
     rule(:field_expr) {
-      str('.') + identifier_name 
+      str('.') + identifier_name.as(:subscription)
     }
 
     #Arguments : 

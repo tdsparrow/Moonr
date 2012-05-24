@@ -61,7 +61,7 @@ module Moonr
       break_state |
       return_state |
       with_state |
-      labelled_state.as(:label) |
+      labelled_state |
       switch_state |
       throw_state |
       try_state |
@@ -71,7 +71,7 @@ module Moonr
     #Block :
     #  { StatementList? }
     rule(:block) {
-      str('{') + state_list.maybe.as(:statements) + str('}')
+      str('{') + state_list.maybe + str('}')
     }
 
 
@@ -281,7 +281,7 @@ module Moonr
     #FunctionDeclaration :
     #  function Identifier ( FormalParameterListopt ){ FunctionBody } 
     rule(:function_declaration) {
-      str('function') + identifier + str('(') + formal_paramter_list.maybe + str(')') + str('{') + function_body + str('}')
+      str('function') + identifier.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
     }
     
     #FunctionExpression :

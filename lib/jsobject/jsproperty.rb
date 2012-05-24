@@ -1,9 +1,41 @@
 require 'singleton'
+require 'forwardable'
 
 module Moonr
+  module Property
+    
+    def internal_property(prop, value)
+      @internal_properties ||= []
+      
+      @internal_properties << [prop, value]
+      define_method(prop) do
+        @internal_properties[prop]
+      end
+
+      define_method(prop.to_s+"=") do |arg|
+        @internal_properties[prop] = arg
+      end
+      
+    end
+
+    def property(prop)
+      @properties ||= []
+      @properties << prop
+    end
+
+    def create_properties
+      @properties ||= []
+      @properties.inject({}) { |ret, v| ret.merge(v => nil) }
+    end
+
+    def create_internal_properties
+      @internal_properties.inject({}) { |ret, v| ret.merge(v.first=>v.last) }
+    end
+  end
+
   module CheckType
     def undefined?
-      is_a? JSUndefined
+      nil?
     end
 
     def is_data?
@@ -24,28 +56,13 @@ module Moonr
 
     def is_generic?
       return false if undefined?
-      return true if writable.nil? and value.nil?
+      return true if not is_data? and not is_accessor?
       false
     end
     
   end
-  
-  class JSDataDescriptor < Struct.new(:value, :writable, :enumerable, :configurable)
-    include CheckType
 
-    
-    def copy
-      desc = self.dup
-      value || self.value = Undefinded.inst
-      writable || self.writable = false
-      enumerable || self.enumerable = false
-      configurable || self.configurable = false
-    end
-  end
-  
-  JSAccessorDescriptor = Struct.new(:get, :set, :writable, :enumerable, :configurable)
-
-  class JSUndefined
+  class JSUndefined_delete
     include CheckType
     include Singleton
 
@@ -53,6 +70,59 @@ module Moonr
       alias :inst :instance
     end
   end
+
+
+  class PropDescriptor
+    extend Property
+    include CheckType
+    include Enumerable
+    extend Forwardable
+
+    def_delegator :@internal_properties, :each, :each
+
+    internal_property :value, nil
+    internal_property :set, nil
+    internal_property :get, nil
+    internal_property :writable, false
+    internal_property :enumerable, false
+    internal_property :configurable, false
+    
+    def initialize(hash)
+      @internal_properties = self.class.create_internal_properties.merge(hash)
+    end
+
+    def merge!(other)
+      other.each { |k,v| @internal_properties[k] = v if not v.nil? }
+    end
+
+    def copy
+      desc = self.dup
+      value || desc.value = nil
+      get || self.get = nil
+      set || self.set = nil
+      writable || desc.writable = false
+      enumerable || desc.enumerable = false
+      configurable || desc.configurable = false
+      desc
+    end
+    
+  end
+  
+  class JSDataDescriptor < Struct.new(:value, :writable, :enumerable, :configurable)
+    include CheckType
+
+    def copy
+      desc = self.dup
+      value || desc.value = nil
+      writable || desc.writable = false
+      enumerable || desc.enumerable = false
+      configurable || desc.configurable = false
+      desc
+    end
+  end
+  
+  JSAccessorDescriptor = Struct.new(:get, :set, :writable, :enumerable, :configurable)
+
 
   class JSNull
     include CheckType

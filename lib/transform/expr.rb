@@ -1,5 +1,9 @@
+require 'pp'
+
 module Moonr
   class Expr < Parslet::Transform
+
+    rule(:primary_expr => simple(:prime)) { prime }
 
     # Array initialiser
     rule(:elision => simple(:e) ) { e.to_s.count(',') }
@@ -7,24 +11,28 @@ module Moonr
 
     # [ , , , ]
     rule(:al => simple(:al), :elisions => simple(:e), :ar => simple(:ar) ) do
-      JSArray.new(e)
+      len = e.nil? ? 0:e
+      JSArray.new(len)
     end
     
     rule(:elisions => simple(:e), :assignment => simple(:a) ) do
       ind = e.nil? ? 0 : e
       obj = JSArray.new(ind) 
-      obj.def_own_property(ind.to_s, JSDataDescriptor.new(a, true, true, true), false )
+      obj.def_own_property(ind.to_s, PropDescriptor.new(:value => a, :writable => true, :enumerable => true, :configurable => true), false )
       obj
     end
 
     rule(:array_literal => sequence(:a) ) do
-      a.inject do |total, value|
-        next total.put(:length, total.get(:length) + value, false) if value.is_a? Fixnum
+      ret = a.inject do |total, value|
+        if value.is_a? Fixnum
+          total.put(:length, total.get(:length) + value, false) 
+          next total
+        end
+
         pad = value.get(:length)
         len = total.get(:length)
-        
-        total.def_own_property(pad+len, JSDataDescriptor.new(value.get(pad), true, true, true), false)
-        Log.debug total
+        total.def_own_property((pad+len-1).to_s, PropDescriptor.new(:value => value.get_at(pad-1), :writable => true, :enumerable => true, :configurable => true), false)
+
         total
       end
     end
@@ -33,9 +41,17 @@ module Moonr
     # Object initialiser
     rule(:lcb => simple(:l), :rcb => simple(:r) ) { JSObject.new }
     rule(:property_name => simple(:name), :assignment_expr => simple(:value) ) do
-      JSPropIdentifier.new(name, JSDataDescriptor.new(value, true, true, true))
+      JSPropIdentifier.new(name, PropDescriptor.new(:value => value, :writable => true, :enumerable => true, :configurable => true))
     end
 
+    rule(:property_name => simple(:name), :get_body => simple(:get) ) do
+      JSPropIdentifier.new(name, PropDescriptor.new(:get => get, :enumerable => true, :configurable => true))
+    end
+
+    rule(:property_name => simple(:name), :param_list => simple(:param), :set_body => simple(:set)) do
+      JSPropIdentifier.new(name, PropDescriptor.new(:set => set, :enumerable => true, :configurable => true))
+    end
+    
     rule(:property_list => simple(:plist) ) do
       prop_list = plist
       JSObject.new do
@@ -49,5 +65,31 @@ module Moonr
         prop_list.each { |i| add_property i }
       end
     end
+
+    rule(:obj_literal => simple(:obj)) { obj }
+
+    # left hand side expr
+    #
+
+    # subscription
+    rule(:subscription => simple(:s)) { s }
+    rule(:member_expr => sequence(:mlist) ) do
+      p 'finally got here'
+      p mlist
+      mlist.inject do |acc, subscription|
+        base = acc.get_value
+
+        # todo, update to follow ecma
+        #property_name = subscription.get_value.to_s        
+        property_name = subscription.to_sym
+        JSBaseObject.check_coercible(base)
+
+        # miss strict logic
+        JSReference.new(base, property_name)
+      end
+    end
+
+    rule(:member_expr => simple(:subject) ) { subject }
+
   end
 end

@@ -1,36 +1,33 @@
 module Moonr
 
-  class JSObject
+  class JSObject < JSBaseObject
+    internal_property :clazz, "Object"
+    internal_property :prototype, JSObject.new
+    internal_property :extensible, true
+    
     def initialize(&block)
-      @data = {}
+      @properties ||= {}
+      super()
+
       instance_eval(&block) if block_given?
     end
 
-    def def_own_property(name, desc, to_throw)
-      @data[name] = desc
-    end
-
-    def get_own_property(name)
-      @data[name] || Undefined
-    end
-    
     def size
-      @data.size
+      @properties.size
     end
 
     def add_property(prop)
       prev = get_own_property(prop.name)
-      case prev
-      # todo strict mode code c        
-      when JSDataDescriptor
-        raise SyntaxError if prop.desc === JSAccessorDescriptor
-        
-      when JSAccessorDescriptor
-        raise SyntaxError if prop.desc === JSDataDescriptor
-        raise SyntaxError if prop.desc === JSAccessorDescriptor and [prev,prop.desc].all?{|d| not d.get.nil? } or [prev, prop.desc].all?{|d| not d.set.nil? }
-      end if not prev === Undefined
 
-      def_own_property(prop.name, prop.desc, false)
+      if not prev.nil?
+        # todo check the condition for strict code
+        
+        raise SyntaxError if prev.is_data? and prop.desc.is_accessor?
+        raise SyntaxError if prev.is_accessor? and prop.desc.is_data?
+        raise SyntaxError if prev.is_accessor? and prop.desc.is_accessor? and [prev,prop.desc].all?{|d| not d.get.nil? } or [prev, prop.desc].all?{|d| not d.set.nil? }
+      end
+
+      def_own_property(prop.name.to_sym, prop.desc, false)
 
     end
   end

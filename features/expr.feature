@@ -1,3 +1,4 @@
+@eval
 Feature: Moonr eval js expression
 
   Scenario Outline: Moonr eval array initialiser
@@ -19,19 +20,30 @@ Feature: Moonr eval js expression
 
   Scenario Outline: Moonr eval object initialiser
     Given a js literal "<literal>" is provided
-    When i parse it using moonr primary_expr
+    When i parse it using moonr lh_side_expr
     Then i get the object with <size> properites
 
     Examples:
-      | literal            | size |
-      | { a: 'x'}          |    1 |
-      | {}                 |    0 |
-      | { a: 'x', b: 'y' } |    2 |
+      | literal                    | size |
+      | { a: 'x'}                  |    1 |
+      | {}                         |    0 |
+      | { a: 'x', b: 'y' }         |    2 |
+      | { a: 'x', get my_a() { 2;} }  |    2 |
+      | { a: 'x', set my_a(a) { 2;} } |    2 |
+
+
+  Scenario Outline: Moonr eval left hand side expr
+    Given a js literal "<literal>" is provided
+    When i parse it using moonr lh_side_expr
+    Then i get the reference with <value> of <property>
+
+    Examples:
+      | literal             | value | property |
+      | {a: 'x', b: 'y'}[a] | x     | a        |
+      | {a: 'x', b: 'y'}.b  | y     | b        |
 
 
 
 
 
-
-      
       

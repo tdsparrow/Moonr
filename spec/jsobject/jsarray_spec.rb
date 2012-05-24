@@ -43,7 +43,7 @@ describe Moonr::JSArray do
     end
 
     it "should return undefined on property other then length for new Array object" do
-      @array.get(:what).should == Moonr::JSUndefined.inst
+      @array.get(:what).should == nil
     end
   end
   
@@ -56,14 +56,21 @@ describe Moonr::JSArray do
 
   context "invariant of relation between length and indexed members" do
     it "should increase length when new element added" do
-      @array.def_own_property "3", Moonr::JSDataDescriptor.new(3), false
+      @array.def_own_property "3", Moonr::PropDescriptor.new(:value => 3), false
+      @array.get("3").should == 3
       @array.get(:length).should == 4
+    end
+
+    it "should delete indexed elements when shrink length" do
+      @array.def_own_property "3", Moonr::PropDescriptor.new(:value => 8, :configurable => true), false
+      @array.put :length, 2, false
+      @array.get("3").should be_nil
     end
   end
 
   context "#def_own_property" do
     it "should be able to add new indexed element" do
-      @array.def_own_property("10", Moonr::JSDataDescriptor.new(10), false)
+      @array.def_own_property("10", Moonr::PropDescriptor.new(:value => 10), false).should be_true
       @array.get("10").should == 10
     end
   end

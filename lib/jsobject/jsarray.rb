@@ -1,24 +1,5 @@
 module Moonr
-  class JSArray
-    @properties = []
-    @internal_properties = []
-
-    class << self
-      attr_reader :properties
-      attr_reader :internal_properties
-    end
-    
-    def self.property(prop)
-      @properties << prop
-    end
-
-    def self.internal_property(prop, value)
-      @internal_properties << [prop, value]
-      define_method(prop) do
-        @internal_properties[prop]
-      end
-    end
-
+  class JSArray < JSBaseObject
     internal_property :clazz, "Array"
     internal_property :extensible, true
     internal_property :prototype, JSNull.inst
@@ -27,21 +8,17 @@ module Moonr
     
     
     def initialize(*args)
-      @properties = {}
-      @internal_properties = {}
-      self.class.properties.each { |prop| @properties[prop] = nil }
-      self.class.internal_properties.each { |prop,value|  @internal_properties[prop] = value }
+      super()
 
       create_arr_with_num(*args) || create_arr_with_elem(*args)
-
       update_length
     end
 
     def update_length
-      @properties[:length] = JSDataDescriptor.new(@array.size,
-                                                  true,
-                                                  false,
-                                                  false)
+      @properties[:length] = PropDescriptor.new( :value => @array.size,
+                                                 :writable => true,
+                                                 :enumerable => false,
+                                                 :configurable => false)
     end
     
     def size
@@ -57,7 +34,10 @@ module Moonr
     def create_arr_with_elem(*args)
       @array = Array.new
       args.each_with_index do |a,i|
-        desc = JSDataDescriptor.new(a, true, true, true)
+        desc = PropDescriptor.new(:value => a,
+                                  :writable => true,
+                                  :enumerable => true,
+                                  :configurable => true)
         @array << desc
         @properties[i] = desc
       end
@@ -75,42 +55,50 @@ module Moonr
       JSArray.new(@array << entry)
     end
 
-    def base_def_own_property(name, desc, to_throw)
-      current = get_own_property(name)
-      reject if current.undefined? and not extensible
 
-      if current.undefined? and extensible
-        if desc.is_generic? or desc.is_data?
-          @properties[name] = desc.copy
-        else
-          @properties[name] = desc.copy
-        end
-        return true
+
+    def reject
+      raise TypeError
+    end
+    
+    def same_value(one, other)
+      return false if one.class != other.class
+      return true if one.nil?
+      return true if one.is_a? JSNull
+      if one.is_a? Numeric
+        return true if one == NaN and other == NaN
+        # missed +0 != -0
+        return true if one == other
+
+        return false
       end
 
-      return true if desc.select {|v| not v.nil?}.empty?
-      return true if desc == current
-
-      unless current.configurable
-        reject if desc.configurable
-        reject if current.configurable == ! desc.configurable
+      if one.is_a? String
+        return true if one == other
+        return false
       end
+
+      if one.is_a? FalseClass or one.is_a? TureClass
+        return one == other
+      end
+
+      return one.equal? other
     end
     
     def def_own_property(name, desc, to_throw)
 
-      old_len_desc = get_own_property(name)
+      old_len_desc = get_own_property(:length)
       old_len = old_len_desc.value
 
       if name == :length or name == "length"
-        return base_def_own_property(name, desc, to_throw)  if (desc.value.nil?)
+        return super(name, desc, to_throw)  if (desc.value.nil?)
 
         new_len_desc = desc.dup
         new_len = desc.value
         # todo TypeError check
         new_len_desc.value = new_len
 
-        return base_def_own_property(name, new_len_desc, to_throw) if new_len >= old_len
+        return super(name, new_len_desc, to_throw) if new_len >= old_len
 
         reject unless old_len_desc.writable
 
@@ -118,66 +106,71 @@ module Moonr
             new_len_desc.writable
           new_writable = true
         else
-          defer(:writable, false)
+          # defer action has been taken care below
+          #defer(:writable, false)
           new_writable = false
           new_len_desc.writable = true
         end
 
-        succeed = base_def_own_property(prop, new_len_desc, to_throw)
+        succeed = super(name, new_len_desc, to_throw)
         return succeed unless succeed
 
         while ( new_len < old_len )
           old_len = old_len.pred
-          del_succeed = delete(old_len, false)
+          del_succeed = delete(old_len.to_s, false)
 
           if not del_succeed
             new_len_desc.value = old_len + 1
             new_len_desc.writable = false unless new_writable
-            base_def_own_property(:length, new_len_desc, false)
+            super(:length, new_len_desc, false)
             reject
           end
         end
 
-        base_def_own_property(:length, JSDataDescriptor.new(nil, false), false) unless new_writable
+        super(:length, PropDescriptor.new(:writable =>false), false) unless new_writable
 
-        return ture
+        return true
       elsif is_index?(name)
         index = name.to_i
         reject if index >= old_len and not old_len_desc.writable
-        succeed = base_def_own_property(name, desc, false)
+        succeed = super(name, desc, false)
         reject unless succeed
 
         if index >= old_len
           old_len_desc.value = index + 1
-          base_def_own_property(:length, old_len_desc, false)
+          super(:length, old_len_desc, false)
         end
         return true
       end
 
-      return base_def_own_property(name, desc, to_throw)
+      return super(name, desc, to_throw)
       
     end
 
-    def get_property(prop)
-      prop = get_own_property(prop)
-      return prop unless prop.undefined?
+    def is_index?(prop)
+      prop.to_i.to_s == prop
+    end
+    
 
-      proto = prototype
-      return JSUndefined.inst if proto.null?
-      return proto.get_property(prop)
+    def delete(prop, to_throw)
+      desc = get_own_property(prop)
+      Log.debug "About to delete #{prop} with value #{desc} from object"
+      return true if desc.nil?
+
+      if desc.configurable
+        @properties.delete prop
+        return true
+      elsif to_throw
+        throw TypeError
+      end
+
+      return false
     end
 
-    def get(prop)
-
-      desc = get_property(prop)
-      return JSUndefined.inst if desc.undefined?
-      return desc.value if desc.is_data?
-
-      getter = desc.get
-      return JSUndefined.inst if getter.undefined?
-
-      return getter.call(self)
+    def get_at(index)
+      get(index.to_s)
     end
+
 
     def put(prop, value, to_throw)
       raise TypeError if not can_put(prop) and to_throw
@@ -185,7 +178,8 @@ module Moonr
 
       own_desc = get_own_property(prop)
       if own_desc.is_data?
-        value_desc = JSDataDescriptor.new(value)
+        Log.debug "Put new value for #{prop}"
+        value_desc = PropDescriptor.new(:value => value)
         def_own_property(prop, value_desc, to_throw)
         return
       end
@@ -195,7 +189,10 @@ module Moonr
       if desc.is_accessor?
         desc.set self, value
       elsif
-        new_desc = JSDataDescriptor.new(value, true, true, true)
+        new_desc = PropDescriptor.new(:value => value,
+                                      :writable => true,
+                                      :enumerable => true,
+                                      :configurable => true)
         def_own_property(prop.new_desc, to_throw)
       end
         
@@ -228,9 +225,5 @@ module Moonr
       end
     end
 
-    def get_own_property(prop)
-      return JSUndefined.inst unless @properties[prop]
-      return @properties[prop]
-    end
   end
 end
