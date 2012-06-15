@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-require 'parslet'
 
 module Moonr
   module Lexical

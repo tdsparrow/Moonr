@@ -46,7 +46,7 @@ Feature: Moonr can parse and eval js literal
     Examples:
       | literal    | result |
       | "abc1"     | abc1   |
-      | "ba\"c"    | ba\"c  |
+      | "ba\"c"    | ba\"c   |
       | "bc\z"     | bcz    |
       | "bc\bd"    | bc\bd  |
       | "a\u0045b" | aEb    |

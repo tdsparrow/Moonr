@@ -18,18 +18,19 @@ module Moonr
       
     end
 
-    def property(prop)
-      @properties ||= []
-      @properties << prop
+    def property(prop, value = nil)
+      @obj_properties ||= {}
+      @obj_properties[prop] = value
     end
 
     def create_properties
-      @properties ||= []
-      @properties.inject({}) { |ret, v| ret.merge(v => nil) }
+      @obj_properties ||= {}
+      @obj_properties.inject({}) { |ret, v| ret.merge(v.first => v.last) } if @obj_properties.size > 0
     end
 
     def create_internal_properties
-      @internal_properties.inject({}) { |ret, v| ret.merge(v.first=>v.last) }
+      @internal_properties ||= []
+      @internal_properties.inject({}) { |ret, v| ret.merge(v.first=>v.last) } if @internal_properties.size > 0
     end
   end
 

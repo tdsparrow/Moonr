@@ -1,0 +1,5 @@
+require 'parslet'
+require 'moonr/parser/syntax/util'
+require 'moonr/parser/syntax/lexical'
+require 'moonr/parser/syntax/expression'
+require 'moonr/parser/syntax/statement'

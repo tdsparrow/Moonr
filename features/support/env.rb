@@ -8,9 +8,8 @@ require 'moonr'
 Moonr::Log.level = :debug
 module MoonrHelper
   def parse(syntax)
-    parser = Moonr::Parser.new.send( syntax.empty? ? :root : syntax.lstrip )
-    @result = Moonr::Result.new(parser.parse @input)
-    @eval = nil
+   # parser = Moonr::Parser.new.send( syntax.empty? ? :root : syntax.lstrip )
+    @result = Moonr::Parser.parse_partial(syntax.empty? ? :root : syntax.lstrip, @input)
   end
 
   def input_str(js)
@@ -22,9 +21,10 @@ module MoonrHelper
   end
 
   def result
-    return @eval unless @eval.nil?
-    @eval = @result.eval
+    @result
   end
+
+
 end
 
 World(MoonrHelper)

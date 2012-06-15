@@ -2,24 +2,7 @@ module Moonr
   class NaN
   end
   
-  class JSNull
-  end
-
-
-  class JSBaseObject
-    self.extend Property
-
-
-    def self.check_coercible param
-      raise TypeError if param.nil?
-      raise TypeError if param.is_a? JSNull
-    end
-
-    
-    def initialize
-      @properties = self.class.create_properties
-      @internal_properties = self.class.create_internal_properties
-    end
+  module Objective
 
     def get(prop)
       desc = get_property(prop)
@@ -38,7 +21,7 @@ module Moonr
 
       proto = prototype
       # nil? or null?
-      return nil if proto.nil?
+      return nil if proto.null?
 
       return proto.get_property(prop)
     end
@@ -107,6 +90,30 @@ module Moonr
       current.merge!(desc)
       true
     end
+
+  end
+
+  class JSBaseObject
+    extend Property
+    include Objective
+
+    def self.check_coercible param
+      raise TypeError if param.nil?
+      raise TypeError if param.is_a? JSNull
+    end
+
+    
+    def initialize(&block)
+      @properties = self.class.create_properties || {}
+      @internal_properties = self.class.create_internal_properties || {}
+
+      instance_eval(&block) if block_given?
+    end
+
+    def null?
+      self.eql? Null
+    end
+
   end
 
   class JSString < JSBaseObject
@@ -117,5 +124,8 @@ module Moonr
 
   class JSBoolean < JSBaseObject
   end
+
+  Undefined = JSBaseObject.new
+  Null = JSBaseObject.new
   
 end

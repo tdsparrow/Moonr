@@ -1,5 +1,4 @@
 # A sample Gemfile
-source "http://rubygems.org"
 source "http://ruby.taobao.org"
 
 gem "parslet"

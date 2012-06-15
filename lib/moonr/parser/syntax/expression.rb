@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-require 'parslet'
-require 'lexical'
-require 'util'
 
 module Moonr
   module Expression
@@ -19,7 +16,7 @@ module Moonr
     #     ( Expression )
     rule(:primary_expr) do
       str('this') |
-      identifier |
+      identifier.as(:identifier) |
       literal |
       array_literal.as(:array_literal) |
       object_literal.as(:obj_literal) |
@@ -83,7 +80,7 @@ module Moonr
     rule(:property_name) {
       identifier_name |
       string_literal |
-      numeric_literal
+      numeric_literal.as(:numeric_property_name)
     }
 
     #PropertySetParameterList : 
@@ -100,7 +97,7 @@ module Moonr
       ( primary_expr | function_expr | member_expr_b ) >> ( ws >> subscription_expr | field_expr ).repeat
     }
     rule(:member_expr_b) {
-      str('new') + member_expr.as(:member_expr) + arguments
+      str('new') + member_expr.as(:new_expr) + arguments.as(:argu)
     }
     
     #NewExpression : 
@@ -108,7 +105,7 @@ module Moonr
     #  new NewExpression
     rule(:new_expr) {
       member_expr.as(:member_expr) |
-      str('new') + new_expr 
+      str('new') + new_expr.as(:new_expr)
     }
 
     #CallExpression : 
@@ -117,7 +114,7 @@ module Moonr
     #  CallExpression [ Expression ] 
     #  CallExpression . IdentifierName
     rule(:call_expr) {
-      member_expr.as(:member_expr) + arguments >> ( ws >> ( arguments | subscription_expr | field_expr ) ).repeat
+      member_expr.as(:funccall_ref) + arguments.as(:funccall_arglist) >> ( ws >> ( arguments | subscription_expr | field_expr ) ).repeat
     }
     # [ Expression ]
     rule(:subscription_expr) {
@@ -132,8 +129,8 @@ module Moonr
     #  ()
     #  ( ArgumentList )
     rule(:arguments) {
-      str('(') + argument_list + str(')') |
-      str('(') + str(')')
+      str('(') + argument_list.as(:argu_list) + str(')') |
+      str('(').as(:empty_parenthesis) + str(')').as(:empty_parenthesis)
 
     }
 
@@ -141,7 +138,7 @@ module Moonr
     #  AssignmentExpression
     # ArgumentList , AssignmentExpression
     rule(:argument_list) {
-      assignment_expr >> ( ws >> str(',') + assignment_expr.as(:argument) ).repeat 
+      assignment_expr.as(:argument) >> ( ws >> str(',') + assignment_expr.as(:argument) ).repeat 
     }
     
     #LeftHandSideExpression : 
@@ -162,7 +159,7 @@ module Moonr
       # lh_side_expr >> nl_ws >> str('++') |
       # lh_side_expr >> nl_ws >> str('--') |
       # lh_side_expr.as(:lh_side_expr)
-      lh_side_expr >> ( nl_ws >> ( str('++') | str('--') ) ).maybe
+      lh_side_expr.as(:lh_side_expr) >> ( nl_ws >> ( str('++') | str('--') ) ).maybe.as(:postfix_op)
     }
 
     #UnaryExpression : 
@@ -178,16 +175,17 @@ module Moonr
     #  ! UnaryExpression
     rule(:unary_expr) {
       postfix_expr |
-      str('delete') + unary_expr |
-      str('void') + unary_expr |
-      str('typeof') + unary_expr |
-      str('++') + unary_expr |
-      str('--') + unary_expr |
-      str('+') + unary_expr |
-      str('-').as(:minus) + unary_expr |
-      str('~') + unary_expr |
-      str('!') + unary_expr
+      str('delete').as(:unary_op) + unary_expr.as(:operant) |
+      str('void').as(:unary_op) + unary_expr.as(:operant) |
+      str('typeof').as(:unary_op) + unary_expr.as(:operant) |
+      str('++').as(:unary_op) + unary_expr.as(:operant) |
+      str('--').as(:unary_op) + unary_expr.as(:operant) |
+      str('+').as(:unary_op) + unary_expr.as(:operant) |
+      str('-').as(:unary_op) + unary_expr.as(:operant) |
+      str('~').as(:unary_op) + unary_expr.as(:operant) |
+      str('!').as(:unary_op) + unary_expr.as(:operant)
     }
+
 
     #MultiplicativeExpression : 
     #  UnaryExpression
@@ -195,7 +193,7 @@ module Moonr
     #  MultiplicativeExpression / UnaryExpression 
     #  MultiplicativeExpression % UnaryExpression
     rule(:multiplicative_expr) {
-      unary_expr >> ( ws >> ( (str('*') + unary_expr) | (str('/') + unary_expr) | (str('%') + unary_expr) ) ).repeat
+      unary_expr.as(:unary_expr) >> ( ws >> ( (str('*').as(:op) + unary_expr.as(:operant)) | (str('/').as(:op) + unary_expr.as(:operant)) | (str('%').as(:op) + unary_expr.as(:operant)) ) ).repeat
     }
 
     #AdditiveExpression : 
@@ -203,7 +201,7 @@ module Moonr
     #  AdditiveExpression + MultiplicativeExpression 
     #  AdditiveExpression - MultiplicativeExpression
     rule(:additive_expr) {
-      multiplicative_expr >> ( ws >>( (str('+') + multiplicative_expr) | (str('-') + multiplicative_expr) ) ).repeat
+      multiplicative_expr.as(:binary_expr) >> ( ws >>( (str('+').as(:op) + multiplicative_expr.as(:operant)) | (str('-').as(:op) + multiplicative_expr.as(:operant)) ) ).repeat
     }
     
     #ShiftExpression : 
@@ -212,7 +210,15 @@ module Moonr
     #  ShiftExpression >> AdditiveExpression 
     #  ShiftExpression >>> AdditiveExpression
     rule(:shift_expr) {
-      additive_expr >> ( ws >> ( postfix %w{ >> << >>> }, additive_expr ) ).repeat
+      additive_expr.as(:binary_expr) >> ( ws >> ( postfix %w{ >> << >>> }, additive_expr.as(:operant), :op ) ).repeat
+      # not working when transform, additive_expr won't reduce
+      #additive_expr.as(:additive_expr) >> ( ws >> ( str('>>').as(:op) | str('<<').as(:op) |str('>>>').as(:op)) + additive_expr.as(:additive_expr)  ).repeat
+
+      # invalid ruby syntax?
+      # additive_expr.as(:additive_expr) >> ( ws >> ( str('>>').as(:op) + additive_expr.as(:additive_expr)
+      #                                               | str('<<').as(:op) + additive_expr.as(:additive_expr) 
+      #                                               | str('>>>').as(:op) + additive_expr.as(:additive_expr) 
+      #                                              ) ).repeat
     }
 
     #RelationalExpression : 
@@ -224,7 +230,7 @@ module Moonr
     #  RelationalExpression instanceof ShiftExpression 
     #  RelationalExpression in ShiftExpression
     rule(:relational_expr) {
-      shift_expr >> ( ws >> ( postfix %w{ < > <= >= instanceof in }, shift_expr ) ).repeat
+      shift_expr.as(:binary_expr) >> ( ws >> ( postfix %w{ < > <= >= instanceof in }, shift_expr.as(:operant), :op ) ).repeat
     }
 
     #RelationalExpressionNoIn : 
@@ -245,7 +251,7 @@ module Moonr
     #  EqualityExpression === RelationalExpression 
     #  EqualityExpression !== RelationalExpression
     rule(:equality_expr) {
-      relational_expr >> ( ws >> ( postfix %w{ == != === !== }, relational_expr ) ).repeat
+      relational_expr.as(:binary_expr) >> ( ws >> ( postfix %w{ == != === !== }, relational_expr.as(:operant), :op ) ).repeat
     }
     
     #EqualityExpressionNoIn : 
@@ -262,7 +268,7 @@ module Moonr
     #  EqualityExpression
     #  BitwiseANDExpression & EqualityExpression
     rule(:bitand_expr) {
-      equality_expr >> ( ws >> str('&') + equality_expr ).repeat
+      equality_expr.as(:binary_expr) >> ( ws >> str('&').as(:op) + equality_expr.as(:operant) ).repeat
     }
     
     #BitwiseANDExpressionNoIn : 
@@ -276,7 +282,7 @@ module Moonr
     #  BitwiseANDExpression
     #  BitwiseXORExpression ^ BitwiseANDExpression
     rule(:bitxor_expr) {
-      bitand_expr >>  ( ws >> str('^') + bitand_expr ).repeat
+      bitand_expr.as(:binary_expr) >>  ( ws >> str('^').as(:op) + bitand_expr.as(:operant) ).repeat
     }
 
     #BitwiseXORExpressionNoIn : 
@@ -290,7 +296,7 @@ module Moonr
     #  BitwiseXORExpression
     #  BitwiseORExpression | BitwiseXORExpression
     rule(:bitor_expr) {
-      bitxor_expr >> ( ws >> str('|') + bitxor_expr ).repeat
+      bitxor_expr.as(:binary_expr) >> ( ws >> str('|').as(:op) + bitxor_expr.as(:operant) ).repeat
     }
     
     #BitwiseORExpressionNoIn : 
@@ -304,21 +310,21 @@ module Moonr
     #  BitwiseORExpression
     #  LogicalANDExpression && BitwiseORExpression
     rule(:logical_and_expr) {
-      bitor_expr >> ( ws >> str('&&') + bitor_expr ).repeat
+      bitor_expr.as(:binary_expr) >> ( ws >> str('&&').as(:op) + bitor_expr.as(:operant) ).repeat
     }
 
     #LogicalANDExpressionNoIn : 
     #  BitwiseORExpressionNoIn
     #  LogicalANDExpressionNoIn && BitwiseORExpressionNoIn
     rule(:logical_and_expr_noin) {
-      bitor_expr_noin >> ( ws >> str('&&') + bitor_expr_noin ).repeat
+      bitor_expr_noin >> ( ws >> str('&&').as(:op) + bitor_expr_noin ).repeat
     }
 
     #LogicalORExpression : 
     #  LogicalANDExpression
     #  LogicalORExpression || LogicalANDExpression
     rule(:logical_or_expr) {
-      logical_and_expr >> ( ws >> str('||') + logical_and_expr ).repeat
+      logical_and_expr.as(:binary_expr) >> ( ws >> str('||').as(:op) + logical_and_expr.as(:operant) ).repeat
     }
     
     #LogicalORExpressionNoIn : 
@@ -332,7 +338,7 @@ module Moonr
     #  LogicalORExpression
     #  LogicalORExpression ? AssignmentExpression : AssignmentExpression
     rule(:cond_expr) {
-      logical_or_expr >> ( ws >> str('?') + assignment_expr + str(':') + assignment_expr ).maybe
+      logical_or_expr.as(:binary_expr) >> ( ws >> str('?') + assignment_expr.as(:first) + str(':') + assignment_expr.as(:second) ).maybe
     }
     
     #ConditionalExpressionNoIn : 
@@ -347,7 +353,7 @@ module Moonr
     #  LeftHandSideExpression = AssignmentExpression 
     #  LeftHandSideExpression AssignmentOperator AssignmentExpression
     rule(:assignment_expr) {
-      lh_side_expr + ( str('=') + assignment_expr | assignment_operator + assignment_expr ) |
+      lh_side_expr.as(:lval) + ( str('=').as(:assign) + assignment_expr.as(:rval) | assignment_operator.as(:assign) + assignment_expr.as(:rval) ) |
       cond_expr
     }
 
@@ -370,7 +376,7 @@ module Moonr
     #  AssignmentExpression
     #  Expression , AssignmentExpression
     rule(:expr) {
-      assignment_expr >> ( ws >> str(',')  + assignment_expr ).repeat
+      assignment_expr.as(:expr) >> ( ws >> str(',')  + assignment_expr.as(:expr) ).repeat
     }
     
     #ExpressionNoIn : 

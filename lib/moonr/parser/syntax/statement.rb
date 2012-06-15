@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-require 'parslet'
-require 'lexical'
-require 'expression'
-require 'util'
-
 module Moonr
   module Statement
     include Parslet
@@ -54,7 +49,7 @@ module Moonr
       block |
       variable_state |
       empty_state |
-      expr_state |
+      expr_state.as(:expr_stat) |
       if_state |
       iteration_state |
       continue_state |
@@ -71,21 +66,22 @@ module Moonr
     #Block :
     #  { StatementList? }
     rule(:block) {
-      str('{') + state_list.maybe + str('}')
+      str('{') + stat_list.maybe.as(:stat_list) + str('}')
     }
 
 
     #StatementList : 
     #  Statement
     #  StatementList Statement 
-    rule(:state_list) {
+    rule(:stat_list) {
       statement >> ( ws >> statement ).repeat
     }
 
     #VariableStatement :
     #  var VariableDeclarationList ;
     rule(:variable_state) {
-      ( str('var') | str('const') ) + variable_declaration_list.as(:var_list) >> se.as(:se) 
+      # const ??
+      ( str('var') | str('const') ) + variable_declaration_list.as(:var_decl_list) >> se
     }
 
 
@@ -106,7 +102,7 @@ module Moonr
     #VariableDeclaration :
     #  Identifier Initialiser?
     rule(:variable_declaration) {
-      identifier >> ( ws >> initialiser).maybe.as(:initialiser) 
+      identifier.as(:id) >> ( ws >> initialiser).maybe.as(:initialiser) 
     }
 
     #VariableDeclarationNoIn : 
@@ -138,14 +134,14 @@ module Moonr
     #ExpressionStatement :
     #  [lookahead 􏰀no {{, function}] Expression ;
     rule(:expr_state) {
-      ( str('{') | str('function') ).absent? >> expr >> se
+      ( str('{') | str('function') ).absent? >> expr.as(:expr) >> se
     }
 
     #IfStatement :
     #  if ( Expression ) Statement else Statement 
     #  if ( Expression ) Statement
     rule(:if_state) {
-      str('if') + str('(') + expr + str(')') + statement + ( str('else') + statement ).maybe
+      str('if') + str('(') + expr.as(:condition) + str(')') + statement.as(:then) + ( str('else') + statement.as(:else) ).maybe
     }
 
     #IterationStatement :
@@ -287,7 +283,7 @@ module Moonr
     #FunctionExpression :
     #  function Identifieropt ( FormalParameterListopt ){ FunctionBody }
     rule(:function_expr) {
-      str('function') + identifier.maybe + str('(') + formal_paramter_list.maybe + str(')') + str('{') + function_body + str('}')
+      str('function') + identifier.maybe.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
     }
 
     #FormalParameterList : 
@@ -301,7 +297,7 @@ module Moonr
     #FunctionBody :
     #  SourceElementsopt 
     rule(:function_body) {
-      source_elements.maybe
+      source_elements.as(:sources).maybe
     }
     
     #Program :
@@ -321,8 +317,8 @@ module Moonr
     #  Statement
     #  FunctionDeclaration
     rule(:source_element) {
-      function_declaration |
-      statement
+      function_declaration.as(:func_decal) |
+      statement.as(:statement)
       
     }
 

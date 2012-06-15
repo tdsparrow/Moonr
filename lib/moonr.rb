@@ -1,9 +1,6 @@
-require 'parslet'
-require 'statement'
-require 'expression'
-require 'transform/transform'
-require 'jsobject'
-require 'util'
+require 'moonr/parser'
+require 'moonr/jsobject'
+require 'moonr/env'
 require 'mixlib/log'
 
 module Moonr
@@ -23,27 +20,31 @@ module Moonr
     
   end
   
-  class Parser < Parslet::Parser
-    include Statement
-    include Expression
-    include Util
-    root :program
+  # class Parser < Parslet::Parser
+  #   include Statement
+  #   include Expression
+  #   include Util
+  #   root :program
 
-    def initialize
-      _ws = self.ws
-      Parslet::Atoms::DSL.send(:define_method, :_ws ){
-        _ws
-      }
-    end
+  #   def initialize
+  #     _ws = self.ws
+  #     Parslet::Atoms::DSL.send(:define_method, :_ws ){
+  #       _ws
+  #     }
+  #   end
 
-    def parsejs(js)
-      Result.new(parse File.open(js))
-    end
+  #   def parsejs(js)
+  #     Result.new(parse File.open(js))
+  #   end
+  # end
+
+end
+
+class String
+  def get_value
+    self
   end
 end
 
-Parslet::Atoms::DSL.class_eval {
-  def +(parslet)
-    self >> _ws >> parslet
-  end
-}
+
+
