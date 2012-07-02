@@ -4,5 +4,6 @@ require 'moonr/jsobject/jsarray'
 require 'moonr/jsobject/jsobject'
 require 'moonr/jsobject/jsreference'
 require 'moonr/jsobject/jsfunction'
+require 'moonr/jsobject/jsglobal'
 
 

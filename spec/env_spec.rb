@@ -1,3 +1,3 @@
-describe Moonr::GlobalEnv do
+describe Moonr do
 
 end

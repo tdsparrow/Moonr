@@ -1,6 +1,21 @@
 @eval
 Feature: Moonr eval js expression
 
+  Scenario: Moonr eval this expr
+    Given a js literal "this" is provided
+    When i parse it using moonr lh_side_expr
+    Then i get the ThisBind element
+    When i eval it with global execution context
+    Then i get a GlobalObject result
+
+  Scenario: Moonr eval identifier expr
+    Given a js literal "a" is provided
+    When i parse it using moonr lh_side_expr
+    Then i get the IdExpr element
+    When i eval it with global execution context "var a;"
+    Then i get the result "a"
+
+
   Scenario Outline: Moonr eval array initialiser
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
@@ -29,7 +44,7 @@ Feature: Moonr eval js expression
       | {}                           |    0 |
       | { a: 'x', b: 'y' }           |    2 |
       | { a: 'x', get my_a() { 2;} } |    2 |
-      | { a:'x', set my_a(a) { 2;} }  |    2 |
+      | { a:'x', set my_a(a) { 2;} } |    2 |
       | { 1: 1}                      |    1 |
 
 
@@ -207,6 +222,18 @@ Feature: Moonr eval js expression
       | literal    |
       | a = 1,1<2  |
       | c-a, a=b+1 |
+
+  Scenario Outline: Moonr eval function expr
+    Given a js literal "<literal>" is provided
+    When i parse it using moonr member_expr
+    Then i get the FuncExpr element
+    
+    Examples:
+      | literal           |
+      | function (a) {b;} |
+      | function a(b){c;} |
+
+
 
 
 

@@ -1,9 +1,13 @@
 module Moonr
   class Stms < Parslet::Transform
+    
+    # this
+    rule(:this => simple(:this) ) { ThisBind.new }
+
     rule(:primary_expr => simple(:prime)) { prime }
 
     rule(:identifier => simple(:id) )do
-      IdExpr.new :id => id
+      IdExpr.new :id => id.to_s
     end
 
     # Array initialiser
@@ -170,17 +174,13 @@ module Moonr
     # expr
     rule(:expr => simple(:expr) ) { expr }
     
-    rule(:expr => sequence(:exprs) ) do
-      Expr.new :expr_list => exprs
-    end
+    # rule(:expr => sequence(:exprs) ) do
+    #   Expr.new :expr_list => exprs
+    # end
 
-    # function declaration
-    rule(:func_decal => simple(:func)) do
-      func
-    end
-
-    rule(:func_name => simple(:name), :param_list => simple(:param), :func_body => simple(:body)) do
-      FuncDef.new :name => name, :param => param, :body => body
+    # function expr
+    rule(:func_expr => simple(:func), :func_name => simple(:name), :param_list => simple(:param), :func_body => simple(:body)) do
+      FuncExpr.new :name => name, :param => param, :body => body
     end
 
     # block statement
@@ -191,7 +191,11 @@ module Moonr
 
     # variable statement
     rule(:id => simple(:id), :initialiser => simple(:initialiser) ) do
-      VariableStat.new :id => id, :initialiser => initialiser
+      VariableStat.new :id => id.to_s, :initialiser => initialiser
+    end
+
+    rule(:assignment_expr => simple(:expr) ) do
+      expr
     end
 
     # if statement
@@ -204,19 +208,137 @@ module Moonr
     rule(:var_decl_list => sequence(:var_list) ) do
       var_list.inject { |acc, v| acc.append v }
     end
+
+    # do while statement
+    rule(:do_stat => simple(:statement), :condition => simple(:condition) ) do
+      DoWhileStat.new :statement => statement, :condition => condition
+    end
     
-    # todo, no need for empty statement right now
-
-    # expr statement
-    rule(:expr_stat => simple(:expr) ) { ExprStat.new :expr => expr }
-
-
-    rule(:sources => simple(:source)) do
-      JSSources.new [source]
+    # while statement
+    rule(:condition => simple(:condition), :while_stat => simple(:statement) ) do
+      WhileStat.new :statement => statement, :condition => condition
     end
 
-    rule(:sources => sequence(:sources)) do
-      JSSources.new sources
+    # for statement
+    rule(:for_init => simple(:init), :for_condition => simple(:condition), :for_iter => simple(:iter), :for_stat => simple(:statement) ) do
+      ForStat.new :init => init, :condition => condition, :iter => iter, :statement => statement
+    end
+
+    # continue statement
+    rule(:continue => simple(:continute) ) do
+      ContinueStat.new
+    end
+
+    rule(:continue => simple(:continute), :continue_id => simple(:id) ) do
+      ContinueStat.new :id => id
+    end
+    # todo, no need for empty statement right now
+
+    # break statement
+    rule(:break => simple(:break) ) { BreakStat.new }
+    rule(:break => simple(:break), :id => simple(:id) ) do
+      BreakStat.new :id => id
+    end
+    
+    # return statement
+    rule(:return => simple(:return) ) { ReturnStat.new }
+    rule(:return => simple(:return), :value => simple(:value) ) do
+      ReturnStat.new :value => value
+    end
+
+    # with statement
+    rule(:with => simple(:with), :expr => simple(:expr), :stat => simple(:stat) ) do
+      WithStat.new :expr => expr, :stat => stat
+    end
+
+    # switch statement
+    rule(:default => simple(:default), :stat_list => simple(:stat_list) ) do
+      CaseClause.new :default => default, :stat_list => stat_list;
+    end
+
+    rule(:default => simple(:default), :stat_list => sequence(:stat_list) ) do
+      CaseClause.new :default => default, :stat_list => stat_list;
+    end
+
+    rule(:case => simple(:case), :expr => simple(:expr), :stat_list => simple(:stat_list) ) do
+      CaseClause.new :expr => expr, :stat_list => stat_list;
+    end
+
+    rule(:case => simple(:case), :expr => simple(:expr), :stat_list => sequence(:stat_list) ) do
+      CaseClause.new :expr => expr, :stat_list => stat_list;
+    end
+
+    rule(:switch => simple(:switch), :expr => simple(:expr), :case_block => simple(:case_block) ) do
+      SwitchStat.new :expr => expr, case_block => case_block
+    end
+    
+    rule(:case_clauses_before => simple(:first), :default_clauses => simple(:default), :case_clauses_after => simple(:second) ) do
+      CaseBlock.new :first => first, :default => default, :second => second
+    end
+
+    rule(:case_clauses_before => sequence(:first), :default_clauses => simple(:default), :case_clauses_after => simple(:second) ) do
+      CaseBlock.new :first => first, :default => default, :second => second
+    end
+
+    rule(:case_clauses_before => simple(:first), :default_clauses => simple(:default), :case_clauses_after => sequence(:second) ) do
+      CaseBlock.new :first => first, :default => default, :second => second
+    end
+
+    rule(:case_clauses_before => sequence(:first), :default_clauses => simple(:default), :case_clauses_after => sequence(:second) ) do
+      CaseBlock.new :first => first, :default => default, :second => second
+    end
+
+    rule(:case_clauses_before => simple(:first) ) do
+      CaseBlock.new :first => first
+    end
+
+    rule(:case_clauses_before => sequence(:first) ) do
+      CaseBlock.new :first => first
+    end
+
+    # label statement
+    rule(:id => simple(:id), :stat => simple(:stat) ) do
+      LabelStat.new :id => id, :stat => stat
+    end
+    
+    # throw statement
+    rule(:throw => simple(:throw), :expr => simple(:expr) ) do
+      ThrowStat.new :expr => expr
+    end
+
+    # try statement
+    rule(:try => simple(:try), :block => simple(:block), :catch => simple(:catch_block), :finally => simple(:finally) ) do
+      TryStat.new :block => block, :catch_block => catch_block, :finally => finally
+    end
+
+    rule(:try => simple(:try), :block => simple(:block), :finally => simple(:finally) ) do
+      TryStat.new :block => block, :finally => finally
+    end
+    
+    # debugger statement
+    rule(:debugger => simple(:debugger) ) { DebugStat.new }
+
+    # expr statement
+    rule(:expr_in_stat => simple(:expr) ) { Expr.new :expr => [expr] }
+    rule(:expr_in_stat => sequence(:expr) ) { Expr.new :expr => expr }
+
+    rule(:expr_stat => simple(:expr) ) { ExprStat.new :expr => expr }
+    
+    # function declaration
+    rule(:func_decal => simple(:func)) do
+      func
+    end
+
+    rule(:func_decal => simple(:func), :func_name => simple(:name), :param_list => simple(:param), :func_body => simple(:body)) do
+      FuncDeclStat.new :func_name => name, :param_list => param, :body => body
+    end
+    
+    rule(:source => simple(:source)) do
+      Sources.new [source]
+    end
+
+    rule(:source => sequence(:sources)) do
+      Sources.new sources
     end
 
     rule(:statement => simple(:state)) do

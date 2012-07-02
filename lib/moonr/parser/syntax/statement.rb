@@ -5,6 +5,10 @@ module Moonr
     include Lexical
     include Expression
 
+
+    # wrap expr for ease usage in statement
+    rule(:expr_in_stat) { expr.as(:expr_in_stat) }
+
     #end of statement
     #EOS
     #  S? ";"
@@ -134,14 +138,14 @@ module Moonr
     #ExpressionStatement :
     #  [lookahead 􏰀no {{, function}] Expression ;
     rule(:expr_state) {
-      ( str('{') | str('function') ).absent? >> expr.as(:expr) >> se
+      ( str('{') | str('function') ).absent? >> expr_in_stat.as(:expr) >> se
     }
 
     #IfStatement :
     #  if ( Expression ) Statement else Statement 
     #  if ( Expression ) Statement
     rule(:if_state) {
-      str('if') + str('(') + expr.as(:condition) + str(')') + statement.as(:then) + ( str('else') + statement.as(:else) ).maybe
+      str('if') + str('(') + expr_in_stat.as(:condition) + str(')') + statement.as(:then) + ( str('else') + statement.as(:else) ).maybe
     }
 
     #IterationStatement :
@@ -152,20 +156,20 @@ module Moonr
     #  for ( LeftHandSideExpression in Expression ) Statement 
     #  for ( var VariableDeclarationNoIn in Expression ) Statement
     rule(:iteration_state) {
-      str('do') + statement + str('while') + str('(') + expr + str(')') |
-      str('while') + str('(') + expr + str(')') + statement |
-      str('for') + str('(') + ( for_clause_a | for_clause_b | for_clause_c ) + str(')') + statement 
+      str('do') + statement.as(:do_stat) + str('while') + str('(') + expr_in_stat.as(:condition) + str(')') |
+      str('while') + str('(') + expr_in_stat.as(:condition) + str(')') + statement.as(:while_stat) |
+      str('for') + str('(') + ( for_clause_a | for_clause_b | for_clause_c ) + str(')') + statement.as(:for_stat) 
     }
 
     #  for ( ExpressionNoInopt ; Expressionopt ; Expressionopt ) Statement 
     rule(:for_clause_a) {
-      expr_noin.maybe + str(';') + expr.maybe + str(';') + expr.maybe 
+      expr_noin.maybe.as(:for_init) + str(';') + expr_in_stat.maybe.as(:for_condition) + str(';') + expr_in_stat.maybe.as(:for_iter) 
     }
     rule(:for_clause_b) {
       lh_side_expr + str('in') + expr 
     }
     rule(:for_clause_c) {
-      str('var') + ( variable_declaration_list_noin + str(';') + expr.maybe + str(';') + expr.maybe |
+      str('var') + ( variable_declaration_list_noin + str(';') + expr_in_stat.maybe + str(';') + expr_in_stat.maybe |
                      variable_declaration_noin + str('in') + expr
                      )
     }
@@ -174,7 +178,7 @@ module Moonr
     #  continue ;
     #  continue [no LineTerminator here] Identifier ;
     rule(:continue_state) {
-      str('continue') >> nl_ws >> ( identifier >> se | nl_se )
+      str('continue').as(:continue) >> nl_ws >> ( identifier.as(:continue_id) >> se | nl_se )
     }
 
     
@@ -182,33 +186,33 @@ module Moonr
     #  break ;
     #  break [no LineTerminator here] Identifier ;
     rule(:break_state) {
-      str('break') >> nl_ws >> ( identifier >> se | nl_se )
+      str('break').as(:break) >> nl_ws >> ( identifier.as(:id) >> se | nl_se )
     }
     
     #ReturnStatement : 
     #  return ;
     #  return [no LineTerminator here] Expression ;
     rule(:return_state) {
-      str('return') >>  nl_ws >>( expr >> se | nl_se )
+      str('return').as(:return) >>  nl_ws >>( expr_in_stat.as(:value) >> se | nl_se )
     }
 
     #WithStatement :
     #  with ( Expression ) Statement 
     rule(:with_state) {
-      str('with') + str('(') + expr + str(')') + statement
+      str('with').as(:with) + str('(') + expr_in_stat.as(:expr) + str(')') + statement.as(:stat)
     }
 
     #SwitchStatement :
     #  switch ( Expression ) CaseBlock
     rule(:switch_state) {
-      str('switch') + str('(') + expr + str(')') + case_block 
+      str('switch').as(:switch) + str('(') + expr_in_stat.as(:expr) + str(')') + case_block.as(:case_block)
     }
 
     #CaseBlock :
     #  { CaseClausesopt }
     #  { CaseClausesopt DefaultClause CaseClausesopt }
     rule(:case_block) {
-      str('{') + case_clauses.maybe + ( default_clause + case_clauses.maybe ).maybe + str('}')
+      str('{') + case_clauses.maybe.as(:case_clauses_before) + ( default_clause.as(:default_clauses) + case_clauses.maybe.as(:case_clauses_after) ).maybe + str('}')
     }
     
 
@@ -222,27 +226,27 @@ module Moonr
     #CaseClause :
     #  case Expression : StatementListopt
     rule(:case_clause) {
-      str('case') + expr + str(':') + state_list.maybe
+      str('case').as(:case) + expr_in_stat.as(:expr) + str(':') + stat_list.maybe.as(:stat_list)
     }
 
     #DefaultClause :
     #  default : StatementListopt
     rule(:default_clause) {
-      str('default') + str(':') + state_list.maybe 
+      str('default').as(:default) + str(':') + stat_list.maybe.as(:stat_list) 
     }
 
 
     #LabelledStatement : 
     #  Identifier : Statement
     rule(:labelled_state) {
-      identifier + str(':') + statement
+      identifier.as(:id) + str(':') + statement.as(:stat)
     }
 
 
     #ThrowStatement :
     #  throw [no LineTerminator here] Expression ;
     rule(:throw_state) {
-      str('throw') >> nl_ws >> ( expr >> se | nl_se )
+      str('throw').as(:throw) >> nl_ws >> ( expr_in_stat.as(:expr) >> se | nl_se )
     }
 
     #TryStatement :
@@ -250,8 +254,8 @@ module Moonr
     #  try Block Finally
     #  try Block Catch Finally
     rule(:try_state) {
-      str('try') + block + ( finally |
-                             catch_state >> ( ws >> finally ).maybe
+      str('try').as(:try) + block.as(:block) + ( finally.as(:finally) |
+                             catch_state.as(:catch) >> ( ws >> finally ).maybe.as(:finally)
                              )
     }
 
@@ -270,20 +274,20 @@ module Moonr
     #DebuggerStatement : 
     #  debugger ;
     rule(:debugger_state) {
-     str('debugger') >> se
+     str('debugger').as(:debugger) >> se
     }
 
 
     #FunctionDeclaration :
     #  function Identifier ( FormalParameterListopt ){ FunctionBody } 
     rule(:function_declaration) {
-      str('function') + identifier.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
+      str('function').as(:func_decal) + identifier.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
     }
     
     #FunctionExpression :
     #  function Identifieropt ( FormalParameterListopt ){ FunctionBody }
     rule(:function_expr) {
-      str('function') + identifier.maybe.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
+      str('function').as(:func_expr) + identifier.maybe.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
     }
 
     #FormalParameterList : 
@@ -297,13 +301,13 @@ module Moonr
     #FunctionBody :
     #  SourceElementsopt 
     rule(:function_body) {
-      source_elements.as(:sources).maybe
+      source_elements.maybe.as(:source)
     }
     
-    #Program :
+p    #Program :
     #  SourceElementsopt
     rule(:program) {
-      ws >> source_elements.maybe >> ws
+      ws >> source_elements.maybe.as(:source) >> ws
     }
 
     #SourceElements : 

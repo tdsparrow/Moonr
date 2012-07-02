@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 describe Moonr::Parser do
   def parse elem, js
     @result = Moonr::Parser.parse_partial elem, js

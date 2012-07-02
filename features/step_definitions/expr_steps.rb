@@ -23,3 +23,31 @@ end
 
 When /^i eval it with global env$/ do
 end
+
+When /^i eval it with global execution context$/ do
+  jseval(Moonr::GlobalContext.new)
+end
+
+Then /^i get a (\w+) result$/ do |type|
+  result.should be_a Moonr.const_get(type.to_sym)
+end
+
+Then /^i get a new function$/ do
+  pending # express the regexp above with the code you wish you had
+end
+
+Then /^i get the result "([^"]*)"$/ do |value|
+  result.to_s.should == value
+end
+
+Then /^send message "([^"]*)" get "([^"]*)"$/ do |method, value|
+  result.send(method.to_sym).to_s.should == value
+end
+
+When /^i eval it with execution context "([^"]*)"$/ do |context|
+  prog = Moonr::Parser.parse(context)
+  p prog
+  env = Moonr::GlobalContext.new
+  prog.jseval(env)
+  jseval(env)
+end

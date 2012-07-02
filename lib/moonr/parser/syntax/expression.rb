@@ -15,7 +15,7 @@ module Moonr
     #     ObjectLiteral
     #     ( Expression )
     rule(:primary_expr) do
-      str('this') |
+      str('this').as(:this) |
       identifier.as(:identifier) |
       literal |
       array_literal.as(:array_literal) |
@@ -362,7 +362,7 @@ module Moonr
     #  LeftHandSideExpression = AssignmentExpressionNoIn 
     #  LeftHandSideExpression AssignmentOperator AssignmentExpressionNoIn
     rule(:assignment_expr_noin) {
-      lh_side_expr + ( str('=') + assignment_expr_noin | assignment_operator + assignment_expr_noin ) |
+      lh_side_expr.as(:lval) + ( str('=').as(:assign) + assignment_expr_noin.as(:rval) | assignment_operator.as(:assign) + assignment_expr_noin.as(:rval) ) |
       cond_expr_noin
     }
 
@@ -383,7 +383,7 @@ module Moonr
     #  AssignmentExpressionNoIn
     #  ExpressionNoIn , AssignmentExpressionNoIn
     rule(:expr_noin) {
-      assignment_expr_noin >> ( ws >> str(',') + assignment_expr_noin ).repeat
+      assignment_expr_noin.as(:expr) >> ( ws >> str(',') + assignment_expr_noin.as(:expr) ).repeat
     }
 
   end

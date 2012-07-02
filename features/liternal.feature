@@ -4,7 +4,7 @@ Feature: Moonr can parse and eval js literal
   Scenario Outline: Moonr can parse integer literal
 
 	Given a js literal "<literal>" is provided
-	When i parse it using moonr
+	When i parse it using moonr literal
 	Then i get the integer <result>
 
     Examples:
@@ -16,7 +16,7 @@ Feature: Moonr can parse and eval js literal
   Scenario Outline: Moonr can parse float literal
 
     Given a js literal "<literal>" is provided
-	When i parse it using moonr
+    When i parse it using moonr literal
 	Then i get the float <result>
 	  
     Examples:
@@ -29,7 +29,7 @@ Feature: Moonr can parse and eval js literal
   Scenario Outline: Moonr can parse boolean literal
    
     Given a js literal "<literal>" is provided
-	When i parse it using moonr
+	When i parse it using moonr literal
 	Then i get the bool <result>	  
 	
 	Examples:
@@ -40,7 +40,7 @@ Feature: Moonr can parse and eval js literal
   Scenario Outline: Moonr can parse string literal
     
     Given a js string literal <literal> is provided
-    When i parse it using moonr
+    When i parse it using moonr literal
     Then i get the string <result>
     
     Examples:

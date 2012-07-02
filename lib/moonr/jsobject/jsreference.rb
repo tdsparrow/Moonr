@@ -6,10 +6,11 @@ module Moonr
     internal_property :name, ""
     internal_property :strict, nil
 
-    def initialize base, name
+    def initialize base, name, strict = false
       @internal_properties = self.class.create_internal_properties
       self.base = base
       self.name = name
+      self.strict = strict
     end
 
     def get_value
@@ -21,7 +22,27 @@ module Moonr
         if not has_primitive_base?
           return base.get name
         end
+
+      else
+        # env rec
+        base.get_binding_value name, strict
       end
+    end
+
+    def put_value(val)
+      raise ReferenceError if is_unresolvable_ref? # miss strict check
+      
+      if is_property?
+        if has_primitive_base?
+          throw 
+        else
+          base.put name, val, strict
+        end
+      else
+        p 'this is a ref to env rec'
+        base.set_mutable_binding name, val, strict
+      end
+      
     end
 
     def is_property?
@@ -34,6 +55,10 @@ module Moonr
 
     def is_unresolvable_ref?
       base.nil?
+    end
+
+    def to_s
+      "This is a refernce to value: #{get_value.to_s}"
     end
   end
 end
