@@ -30,12 +30,12 @@ Feature: Moonr eval js statement
     When i parse it using moonr statement
     Then i get the ExprStat element
     When i eval it with execution context "<context>"    
-    Then i get the result "(normal, 2, empty)"
+    Then i get the result "<result>"
 
     Examples:
-      | literal | context          |
-      | a+ b;   | var a=1;var b=1; |
-      | a+b+1;  | var a=1;var b=2; |
+      | literal | context          | result             |
+      | a+ b;   | var a=1;var b=1; | (normal, 2, empty) |
+      | a+b+1;  | var a=1;var b=2; | (normal, 4, empty) |
 
 
   Scenario Outline: Moonr eval expression statement

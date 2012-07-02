@@ -11,13 +11,14 @@ module Moonr
       idexpr = IdExpr.new :id => id
       lhr = idexpr.jseval env
       
-      rhs = initialiser.jseval env
-      value = rhs.get_value
+      if initialiser
+        rhs = initialiser.jseval env
+        value = rhs.get_value
 
-      lhr.put_value value
-      p lhr
+        lhr.put_value value
+      end
 
-      @list && @list.inject(lhr) do |stat|
+      @list && @list.inject(lhr) do |acc, stat|
         stat.jseval env
       end
       Result.new :type => :normal, :value => :empty, :target => :empty

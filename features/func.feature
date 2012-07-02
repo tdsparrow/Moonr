@@ -4,7 +4,7 @@ Feature: Moonr eval js expression
   Scenario Outline: Moonr eval function declaration
     Given a js literal "<literal>" is provided
     When i parse it using moonr
-    Then i get the FuncDef element
+    Then i get the Sources element
     
     Examples:
       | literal                     | size |

@@ -39,7 +39,6 @@ module Moonr
           base.put name, val, strict
         end
       else
-        p 'this is a ref to env rec'
         base.set_mutable_binding name, val, strict
       end
       

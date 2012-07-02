@@ -84,9 +84,9 @@ module Moonr
     internal_property :value, nil
     internal_property :set, nil
     internal_property :get, nil
-    internal_property :writable, false
-    internal_property :enumerable, false
-    internal_property :configurable, false
+    internal_property :writable, nil
+    internal_property :enumerable, nil
+    internal_property :configurable, nil
     
     def initialize(hash)
       @internal_properties = self.class.create_internal_properties.merge(hash)

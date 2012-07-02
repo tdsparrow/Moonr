@@ -12,8 +12,8 @@ Feature: Moonr eval js expression
     Given a js literal "a" is provided
     When i parse it using moonr lh_side_expr
     Then i get the IdExpr element
-    When i eval it with global execution context "var a;"
-    Then i get the result "a"
+    When i eval it with execution context "var a;"
+    Then i get a JSReference result 
 
 
   Scenario Outline: Moonr eval array initialiser

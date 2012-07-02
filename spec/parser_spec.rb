@@ -12,6 +12,6 @@ describe Moonr::Parser do
   end
 
   it "should parse a function body to JSSources" do
-    parse(:function_body, "return 1").should be_a Moonr::JSSources
+    parse(:function_body, "return 1").should be_a Moonr::Sources
   end
 end

@@ -53,7 +53,6 @@ module Moonr
 
     def def_own_property(name, desc, to_throw)
       current = get_own_property(name)
-      p current
       reject if current.undefined? and not extensible
       
       if current.undefined? and extensible

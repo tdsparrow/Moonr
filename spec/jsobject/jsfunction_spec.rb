@@ -78,7 +78,7 @@ describe Moonr::JSFunction do
 
       func.extensible.should be_true
 
-      func.code.should be_is_a Moonr::JSSources
+      func.code.should be_a Moonr::Sources
 
       func = new_func(nil, "p1", "p2, p3", "return 1")
       func.get(:length).should == 3

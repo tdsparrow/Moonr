@@ -37,7 +37,6 @@ module Moonr
 
       if not prev.undefined?
         # todo check the condition for strict code
-        p 'not good'
         raise SyntaxError if prev.is_data? and prop.desc.is_accessor?
         raise SyntaxError if prev.is_accessor? and prop.desc.is_data?
         raise SyntaxError if prev.is_accessor? and prop.desc.is_accessor? and [prev,prop.desc].all?{|d| not d.get.nil? } or [prev, prop.desc].all?{|d| not d.set.nil? }

@@ -46,7 +46,6 @@ end
 
 When /^i eval it with execution context "([^"]*)"$/ do |context|
   prog = Moonr::Parser.parse(context)
-  p prog
   env = Moonr::GlobalContext.new
   prog.jseval(env)
   jseval(env)
