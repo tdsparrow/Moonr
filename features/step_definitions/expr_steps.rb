@@ -50,3 +50,7 @@ When /^i eval it with execution context "([^"]*)"$/ do |context|
   prog.jseval(env)
   jseval(env)
 end
+
+Then /^i get "([^"]*)" with property "([^"]*)"$/ do |ret, prop|
+  result.get(prop).to_s.should == ret
+end

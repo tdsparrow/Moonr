@@ -16,7 +16,7 @@ module Moonr
 
     def get(prop)
       desc = get_property(prop)
-      return Null if desc.undefined?
+      return Undefined if desc.undefined?
       return desc.value if desc.is_data?
 
       getter = desc.get
@@ -188,10 +188,15 @@ module Moonr
   class JSBoolean < JSBaseObject
   end
 
-  Undefined = JSBaseObject.new
-  def Undefined.method_missing(sym, *args, &block)
-    Null
-  end
+  Undefined = JSBaseObject.new {
+    def method_missing(sym, *args, &block)
+      Null
+    end
+    
+    def to_s()
+      "undefined"
+    end
+  }
   Null = JSBaseObject.new
 
   def Null.method_missing(sym, *args, &block) 

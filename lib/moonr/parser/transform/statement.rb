@@ -12,36 +12,41 @@ module Moonr
 
     # Array initialiser
     rule(:elision => simple(:e) ) { e.to_s.count(',') }
-    rule(:elisions => simple(:e) ) { e.nil? ? 0:e }
+    rule(:elisions => simple(:e) ) do 
+      OpenStruct.new :elisions => e.nil? ? 0:e, :elem => nil
+    end
 
     # [ , , , ]
     rule(:al => simple(:al), :elisions => simple(:e), :ar => simple(:ar) ) do
       len = e.nil? ? 0:e
-      JSArray.new(len)
+      OpenStruct.new :elisions => len, :elem => nil
+      #JSArray.new(len)
     end
     
     rule(:elisions => simple(:e), :assignment => simple(:a) ) do
       ind = e.nil? ? 0 : e
-      obj = JSArray.new(ind) 
-      obj.def_own_property(ind.to_s, PropDescriptor.new(:value => a, :writable => true, :enumerable => true, :configurable => true), false )
-      obj
+      OpenStruct.new :elisions => ind, :elem => a 
+      #obj = JSArray.new(ind) 
+      #obj.def_own_property(ind.to_s, PropDescriptor.new(:value => a, :writable => true, :enumerable => true, :configurable => true), false )
+      #obj
     end
 
     rule(:array_literal => sequence(:a) ) do
-      ret = a.inject do |total, value|
-        if value.is_a? Fixnum
-          total.put(:length, total.get(:length) + value, false) 
-          next total
-        end
+      ArrayLiteral.new a
+      # ret = a.inject do |total, value|
+      #   if value.is_a? Fixnum
+      #     total.put(:length, total.get(:length) + value, false) 
+      #     next total
+      #   end
 
-        pad = value.get(:length)
-        len = total.get(:length)
-        total.def_own_property((pad+len-1).to_s, PropDescriptor.new(:value => value.get_at(pad-1), :writable => true, :enumerable => true, :configurable => true), false)
+      #   pad = value.get(:length)
+      #   len = total.get(:length)
+      #   total.def_own_property((pad+len-1).to_s, PropDescriptor.new(:value => value.get_at(pad-1), :writable => true, :enumerable => true, :configurable => true), false)
 
-        total
-      end
+      #   total
+      # end
     end
-    rule(:array_literal => simple(:a) ) { a }
+    rule(:array_literal => simple(:a) ) { ArrayLiteral.new [a] }
 
     # Object initialiser
     rule(:lcb => simple(:l), :rcb => simple(:r) ) { JSObject.new }

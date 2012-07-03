@@ -19,18 +19,24 @@ Feature: Moonr eval js expression
   Scenario Outline: Moonr eval array initialiser
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
-    Then i get the array with size <size>
+    Then i get the ArrayLiteral element
+    When i eval it with execution context "var a=1,b=2,c=2;"
+    Then i get a JSArray result
+    And i get "<result>" with property "<index>"
     
     Examples:
-      | literal       | size |
-      | [ , , ]       |    2 |
-      | [ , , ,]      |    3 |
-      | [ a,b,,]      |    3 |
-      | [ a, b, c, ,] |    4 |
-      | [ a,,  , b ]  |    4 |
-      | [,]           |    1 |
-      | [ab]          |    1 |
-      | [    ]        |    0 |
+      | literal       | size | index |    result |
+      | [ , , ]       |    2 |     0 | undefined |
+      | [ , , ,]      |    3 |     1 | undefined |
+      | [ a,b,,,]     |    3 |     0 |         1 |
+      | [ a, b, c, ,] |    4 |     1 |         2 |
+      | [ a,,  , b ]  |    4 |     3 |         2 |
+      | [,]           |    1 |     0 | undefined |
+      | [a]           |    1 |     0 |         1 |
+      | [    ]        |    0 |     0 | undefined |
+      | [ , , , a]    |    4 |     3 |         1 |
+
+
 
 
   Scenario Outline: Moonr eval object initialiser
