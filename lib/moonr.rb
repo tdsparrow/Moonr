@@ -14,7 +14,7 @@ module Moonr
   end
 
   class ::Numeric
-    def jseval(env)
+    def jseval(env, strict = false)
       self
     end
     def get_value

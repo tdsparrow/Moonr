@@ -122,7 +122,7 @@ module Moonr
     }
     # . IdentifierName
     rule(:field_expr) {
-      str('.') + identifier_name.as(:subscription)
+      str('.') + identifier_name.as(:field_name)
     }
 
     #Arguments : 

@@ -48,9 +48,9 @@ module Moonr
       yield self if block_given?
     end
 
-    def self.global
+    def self.global(obj)
       self.new { |lex|
-        lex.rec = ObjEnvRec.new GlobalObject.new
+        lex.rec = ObjEnvRec.new obj
         lex.outter = Null
       }
     end
@@ -85,22 +85,25 @@ module Moonr
       end
 
       code.variable_decl_all.each do |var|
-        dn = var.id
-
-        unless env.has_binding? dn
-          env.create_mutable_binding dn, configurable_binding
-          env.set_mutable_binding dn, Undefined, strict
+        var.each_id do |dn|
+          p dn
+          unless env.has_binding? dn
+            env.create_mutable_binding dn, configurable_binding
+            env.set_mutable_binding dn, Undefined, strict
+          end
         end
+        
       end
     end
   end
 
   class GlobalContext < ExecuteContext
     def initialize
-      env = LexEnv.global
+      global = GlobalObject.new
+      env = LexEnv.global global
       @lexical_env = env
       @variable_env = env
-      @this_bind = GlobalObject.new
+      @this_bind = global
     end
   end
 end

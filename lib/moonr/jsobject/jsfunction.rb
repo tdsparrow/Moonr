@@ -37,10 +37,10 @@ module Moonr
 
     property :length
 
-    def initialize env, *args
+    def initialize param, body, env, strict
       super()
-      self.formal_param = args[0..-2]
-      self.code = args[-1] if args.length > 0
+      self.formal_param = param
+      self.code = body
       create_function env
     end
 
@@ -52,8 +52,8 @@ module Moonr
       @internal_properties[:code] = body.is_a?(String) ? Parser.parse_partial(:function_body, body) : body
     end
 
-    def get proto
-        v = super(proto)
+    def get(proto)
+      v = super(proto)
       throw TypeError if proto == :caller and strict?
       return v
     end
@@ -78,27 +78,17 @@ module Moonr
       self.new GlobalEnv, *args
     end
 
-    # Function constructor's property, not Function objects'
-    singletonclass = class << self; extend Property; self; end
-    singletonclass.property :prototype, PropDescriptor.new(:value => FunctionPrototype)
-    singletonclass.property :length, PropDescriptor.new(:value => 1)
-    @properties = singletonclass.create_properties
-
-
     private
-
     def create_function env
       def_own_property :length, PropDescriptor.new(:value => formal_param.length), false
       
       proto = JSObject.new
       proto.def_own_property :constructor, PropDescriptor.new(:value => self,
                                                               :writable => true,
-                                                              :configurable => true
-                                                              ), false
+                                                              :configurable => true), false
       
       def_own_property :prototype, PropDescriptor.new(:value => proto,
-                                                      :writable => true
-                                                      ), false
+                                                      :writable => true), false
     end
 
     
@@ -108,8 +98,8 @@ module Moonr
 
     def_own_property(:constructor, PropDescriptor.new(:value => JSFunction), false)
 
-    apply = JSFunction.new 'apply'
-    def_own_property(:apply, PropDescriptor.new(:value => apply), false)
+    #apply = JSFunction.new 'apply'
+    #def_own_property(:apply, PropDescriptor.new(:value => apply), false)
   }
 
 end

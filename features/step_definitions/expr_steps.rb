@@ -32,10 +32,6 @@ Then /^i get a (\w+) result$/ do |type|
   result.should be_a Moonr.const_get(type.to_sym)
 end
 
-Then /^i get a new function$/ do
-  pending # express the regexp above with the code you wish you had
-end
-
 Then /^i get the result "([^"]*)"$/ do |value|
   result.to_s.should == value
 end

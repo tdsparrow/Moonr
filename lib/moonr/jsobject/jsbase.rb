@@ -77,7 +77,8 @@ module Moonr
         if current.is_data? ^ desc.is_data?
           reject if not current.configurable
 
-          # caused bu mysterious "absent" in ECMA 262 for property descriptor
+          # caused bu mysterious "absent" in ECMA 262 for property descriptor // clear
+          # spec define default property of 
           if current.is_data?
             current = PropDescriptor.new(:configurable => current.configurable,
                                          :enumerable => current.enumerable)
@@ -112,6 +113,7 @@ module Moonr
       own_desc = get_own_property(prop)
       if own_desc.is_data?
         Log.debug "Put new value for #{prop}"
+
         value_desc = PropDescriptor.new(:value => value)
         def_own_property(prop, value_desc, to_throw)
         return
@@ -165,8 +167,8 @@ module Moonr
     include Objective
 
     def self.check_coercible param
-      raise TypeError if param.nil?
-      raise TypeError if param.is_a? JSNull
+      raise TypeError if param.null?
+      raise TypeError if param.undefined?
     end
 
     

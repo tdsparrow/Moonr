@@ -42,21 +42,27 @@ Feature: Moonr eval js expression
   Scenario Outline: Moonr eval object initialiser
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
-    Then i get the object with <size> properites
+    Then i get the ObjectLiteral element
+    When i eval it with execution context "var a=1, b=2;"
+    Then i get a JSObject result
+    And i get "<result>" with property "<name>"
 
     Examples:
-      | literal                      | size |
-      | { a: 'x'}                    |    1 |
-      | {}                           |    0 |
-      | { a: 'x', b: 'y' }           |    2 |
-      | { a: 'x', get my_a() { 2;} } |    2 |
-      | { a:'x', set my_a(a) { 2;} } |    2 |
-      | { 1: 1}                      |    1 |
+      | literal                      | size | name | result    |
+      | { x: 'x',}                   |    1 | x    | x         |
+      | {}                           |    0 |      | undefined |
+      | { x: 'x', b: b }             |    2 | b    | 2         |
+      | { x: 'x', get my_a() { a;} } |    2 | x    | x         |
+      | { x:'x', set my_a(a) { 2;} } |    2 | x    | x         |
+      | { 1: 1}                      |    1 | 1    | 1         |
+
 
 
   Scenario Outline: Moonr eval property accessor
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
+    Then i get the PropertyAccessor element
+    When i eval it with execution context "var a=1, b=2;"
     Then i get the reference with <value> of <property>
 
     Examples:
@@ -69,8 +75,8 @@ Feature: Moonr eval js expression
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
     Then i get the NewOp element
-    When i eval it with global env
-    Then i get a new function
+    When i eval it with global execution context
+    Then i get a JSObject result
     
     Examples:
       | literal                     | 
@@ -233,11 +239,14 @@ Feature: Moonr eval js expression
     Given a js literal "<literal>" is provided
     When i parse it using moonr member_expr
     Then i get the FuncExpr element
+    When i eval it with execution context "var a=1, b=2, c=3;"
+    Then i get a JSFunction result
+
     
     Examples:
-      | literal           |
-      | function (a) {b;} |
-      | function a(b){c;} |
+      | literal             |
+      | function (a,c) {b;} |
+      | function a(b){c;}   |
 
 
 

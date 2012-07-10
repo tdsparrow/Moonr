@@ -1,33 +1,33 @@
 require 'spec_helper'
 
-describe Moonr::JSFunction do
-  def new_func *args
-    Moonr::JSFunction.new *args
+describe Moonr::Function do
+  def function 
+    Moonr::Function.new 
   end
 
   def func_proto_obj 
-    Moonr::JSFunction.get(:prototype)
+    function.get(:prototype)
   end
 
   it "should has internal property class of value 'Function'" do
-    Moonr::JSFunction.clazz.should == 'Function'
+    function.clazz.should == 'Function'
   end
 
   it "should have a Function prototype object" do
-    Moonr::JSFunction.get(:prototype).clazz.should == 'Function'
+    function.get(:prototype).clazz.should == 'Function'
   end
 
   it "should have a length property" do
-    Moonr::JSFunction.get(:length).should == 1
+    function.get(:length).should == 1
   end
 
   it "should has internal property prototype of value Function.prototype" do
-    Moonr::JSFunction.prototype.should == Moonr::FunctionPrototype
+    function.prototype.should == Moonr::FunctionPrototype
   end
 
   it "should be able to call" do
-    Moonr::JSFunction.should be_respond_to :call
-    Moonr::JSFunction.call('p1,p2', 'return 1').should be_a Moonr::JSFunction
+    function.should respond_to :call
+    function.call('p1,p2', 'return 1').should be_a Moonr::JSFunction
   end
 
   context "prototype" do
@@ -45,14 +45,14 @@ describe Moonr::JSFunction do
     end
 
     it "should not has own valueOf property" do
-      func_proto_obj.get_own_property(:valueOf).should be_nil
+      func_proto_obj.get_own_property(:valueOf).should be Moonr::Undefined
     end
 
     it "should has 0 length property" do
       func_proto_obj.get(:length).should == 0
     end
 
-    it "should has JSFunction as constructor property" do
+    it "should has JSFunction asj constructor property" do
       func_proto_obj.get(:constructor).should == Moonr::JSFunction
     end
 
@@ -62,7 +62,7 @@ describe Moonr::JSFunction do
 
     it "should has method apply()" do
       func_proto_obj.get(:apply).should be_is_a(Moonr::JSFunction)
-     end
+    end
   end
 
   context "initialize" do
@@ -86,12 +86,6 @@ describe Moonr::JSFunction do
       pending "Strict is not implemented yet"
     end
 
-    it "should create a new function to be callable" do
-
-    end
-
   end
 
 end
-
-

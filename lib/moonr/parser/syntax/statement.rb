@@ -281,20 +281,20 @@ module Moonr
     #FunctionDeclaration :
     #  function Identifier ( FormalParameterListopt ){ FunctionBody } 
     rule(:function_declaration) {
-      str('function').as(:func_decal) + identifier.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
+      str('function').as(:func_decal) + identifier.as(:func_name) + str('(') + formal_parameter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
     }
     
     #FunctionExpression :
     #  function Identifieropt ( FormalParameterListopt ){ FunctionBody }
     rule(:function_expr) {
-      str('function').as(:func_expr) + identifier.maybe.as(:func_name) + str('(') + formal_paramter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
+      str('function').as(:func_expr) + identifier.maybe.as(:func_name) + str('(') + formal_parameter_list.maybe.as(:param_list) + str(')') + str('{') + function_body.as(:func_body) + str('}')
     }
 
     #FormalParameterList : 
     #  Identifier
     #  FormalParameterList , Identifier 
-    rule(:formal_paramter_list) {
-      identifier >> (ws >> str(',') + identifier ).repeat 
+    rule(:formal_parameter_list) {
+      identifier.as(:formal_parameter) >> (ws >> str(',') + identifier.as(:formal_parameter) ).repeat 
     }
 
 

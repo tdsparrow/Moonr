@@ -49,33 +49,34 @@ module Moonr
     rule(:array_literal => simple(:a) ) { ArrayLiteral.new [a] }
 
     # Object initialiser
-    rule(:lcb => simple(:l), :rcb => simple(:r) ) { JSObject.new }
+    rule(:lcb => simple(:l), :rcb => simple(:r) ) { ObjectLiteral.new }
     rule(:property_name => simple(:name), :assignment_expr => simple(:value) ) do
-      JSPropIdentifier.new(name, PropDescriptor.new(:value => value, :writable => true, :enumerable => true, :configurable => true))
+      OpenStruct.new :name => name.to_s, :expr => value
+      #JSPropIdentifier.new(name, PropDescriptor.new(:value => value, :writable => true, :enumerable => true, :configurable => true))
     end
 
     rule(:property_name => simple(:name), :get_body => simple(:get) ) do
-      getter = JSFunction.new nil, get
-      JSPropIdentifier.new(name, PropDescriptor.new(:get => getter, :enumerable => true, :configurable => true))
+      OpenStruct.new :name => name.to_s, :get => get
     end
 
     rule(:property_name => simple(:name), :param_list => simple(:param), :set_body => simple(:set)) do
-      setter = JSFunction.new nil, param, set
-      JSPropIdentifier.new(name, PropDescriptor.new(:set => setter, :enumerable => true, :configurable => true))
+      OpenStruct.new :name => name.to_s, :param => param, :set => set
     end
     
     rule(:property_list => simple(:plist) ) do
-      prop_list = plist
-      JSObject.new do
-        def_own_property(prop_list.name, prop_list.desc, false)
-      end
+      ObjectLiteral.new [plist]
+      # prop_list = plist
+      # JSObject.new do
+      #   def_own_property(prop_list.name, prop_list.desc, false)
+      # end
     end
     
     rule(:property_list => sequence(:plist) ) do
-      prop_list = plist
-      JSObject.new do
-        prop_list.each { |i| add_property i }
-      end
+      ObjectLiteral.new plist
+      # prop_list = plist
+      # JSObject.new do
+      #   prop_list.each { |i| add_property i }
+      # end
     end
 
     rule(:numeric_property_name => simple(:num)) do
@@ -88,19 +89,21 @@ module Moonr
     #
 
     # subscription
-    rule(:subscription => simple(:s)) { s.to_s }
+    rule(:subscription => simple(:s)) { s }
+    rule(:field_name => simple(:f) ) { f.to_s }
     rule(:member_expr => sequence(:mlist) ) do
-      mlist.inject do |acc, subscription|
-        base = acc.get_value
+      PropertyAccessor.new mlist
+      # mlist.inject do |acc, subscription|
+      #   base = acc.get_value
 
 
-        property_name = subscription.get_value.to_sym
+      #   property_name = subscription.get_value.to_sym
 
-        JSBaseObject.check_coercible(base)
+      #   JSBaseObject.check_coercible(base)
 
-        # miss strict logic
-        JSReference.new(base, property_name)
-      end
+      #   # miss strict logic
+      #   JSReference.new(base, property_name)
+      # end
     end
 
     rule(:member_expr => simple(:subject) ) { subject }
@@ -184,8 +187,12 @@ module Moonr
     # end
 
     # function expr
+    rule(:formal_parameter => simple(:param) ) { param.to_s }
     rule(:func_expr => simple(:func), :func_name => simple(:name), :param_list => simple(:param), :func_body => simple(:body)) do
-      FuncExpr.new :name => name, :param => param, :body => body
+      FuncExpr.new :name => name.to_s, :param => [param], :body => body
+    end
+    rule(:func_expr => simple(:func), :func_name => simple(:name), :param_list => sequence(:param), :func_body => simple(:body)) do
+      FuncExpr.new :name => name.to_s, :param => param, :body => body
     end
 
     # block statement
