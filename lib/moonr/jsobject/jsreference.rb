@@ -31,7 +31,7 @@ module Moonr
 
     def put_value(val)
       raise ReferenceError if is_unresolvable_ref? # miss strict check
-      
+
       if is_property?
         if has_primitive_base?
           throw 

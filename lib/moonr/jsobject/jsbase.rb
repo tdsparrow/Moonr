@@ -135,7 +135,6 @@ module Moonr
 
     def can_put(prop)
       desc = get_own_property(prop)
-
       if not desc.undefined?
         if desc.is_accessor?
           return false if desc.set.undefined?

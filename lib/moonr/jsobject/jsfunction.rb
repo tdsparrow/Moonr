@@ -3,6 +3,7 @@ require 'moonr/jsobject/jssources'
 
 module Moonr
   
+
   FunctionPrototype = JSBaseObject.new {
     def clazz 
       'Function'
@@ -23,6 +24,48 @@ module Moonr
     def_own_property(:length, PropDescriptor.new(:value => 0), false)
     
   }
+
+  # 
+  #
+  class Function < JSBaseObject
+    attr_accessor :global
+
+    internal_property :clazz, 'Function'
+    internal_property :prototype, FunctionPrototype
+    
+    property :prototype, PropDescriptor.new(:value => FunctionPrototype, 
+                                            :writable => false,
+                                            :enumerable => false,
+                                            :configurable => false)
+
+    property :length, PropDescriptor.new(:value => 1,
+                                         :writable => false,
+                                         :enumerable => false,
+                                         :configurable => false)
+    
+    def call *args
+      arg_count = args.length
+      p = ""
+      body = ""
+
+      if arg_count == 1
+        body = args[0]
+      elsif arg_count > 1
+        p = args[0..-2].join(',')
+        body = args.last
+      end
+
+      p = Parser.parse_partial :formal_parameter_list, p
+      body = Parser.parse_partial :function_body, body
+      strict = body.strict?
+
+      # miss strict check
+      JSFunction.new p, body, global, strict
+    end
+    
+    alias :construct :call
+  end
+
   
 
   class JSFunction < JSBaseObject
@@ -57,30 +100,16 @@ module Moonr
       throw TypeError if proto == :caller and strict?
       return v
     end
-    
-    def self.clazz
-      'Function'
-    end
-    
-    def self.prototype
-      FunctionPrototype
-    end
-    
-    def self.extensible
-      true
-    end
 
-    def self.call *args
-      self.new GlobalEnv, *args
-    end
-
-    def self.constructor *args
-      self.new GlobalEnv, *args
+    def construct
     end
 
     private
     def create_function env
-      def_own_property :length, PropDescriptor.new(:value => formal_param.length), false
+      def_own_property :length, PropDescriptor.new(:value => formal_param.length,
+                                                   :writable => false,
+                                                   :enumerable => false,
+                                                   :configurable => false), false
       
       proto = JSObject.new
       proto.def_own_property :constructor, PropDescriptor.new(:value => self,
@@ -90,16 +119,41 @@ module Moonr
       def_own_property :prototype, PropDescriptor.new(:value => proto,
                                                       :writable => true), false
     end
-
     
   end
 
-  FunctionPrototype.instance_eval {
+  FunctionPrototype.instance_eval do
 
     def_own_property(:constructor, PropDescriptor.new(:value => JSFunction), false)
 
-    #apply = JSFunction.new 'apply'
-    #def_own_property(:apply, PropDescriptor.new(:value => apply), false)
-  }
+    apply = JSFunction.new %w{this_arg arg_array}, nil, nil, false
+    apply.instance_eval do
+      undef :construct
+
+      def call(this_arg, arg_array)
+        func = this_arg
+        this = arg_array.first
+        arg = arg_array.last
+        raise TypeError unless func.respond_to :call
+        
+        if arg.null? || arg.Undefined?
+          return func.call(this, nil)
+        end
+        raise TypeError unless arg.is_a? JSObject
+
+        len = arg.get :length
+        arg_list = JSList.new
+        (1..len-1).each { |ind| arg_list << arg.get(ind.to_s) }
+        func.call this, arg_list
+      end
+    end
+    def_own_property(:apply, PropDescriptor.new(:value => apply), false)
+
+    bind = JSFunction.new %w{thisArg ...}, nil, nil, false
+    def_own_property(:bind, PropDescriptor.new(:value => bind), false)    
+
+    call = JSFunction.new %w{thisArg ...}, nil, nil, false
+    def_own_property(:call, PropDescriptor.new(:value => call), false)    
+  end
 
 end

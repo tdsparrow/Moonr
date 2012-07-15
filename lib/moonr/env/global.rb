@@ -52,6 +52,9 @@ module Moonr
       self.new { |lex|
         lex.rec = ObjEnvRec.new obj
         lex.outter = Null
+
+        # NIS (not in spec)
+        obj.global=lex
       }
     end
     
@@ -86,7 +89,6 @@ module Moonr
 
       code.variable_decl_all.each do |var|
         var.each_id do |dn|
-          p dn
           unless env.has_binding? dn
             env.create_mutable_binding dn, configurable_binding
             env.set_mutable_binding dn, Undefined, strict

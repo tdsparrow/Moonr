@@ -30,6 +30,11 @@ describe Moonr::Function do
     function.call('p1,p2', 'return 1').should be_a Moonr::JSFunction
   end
 
+  it "should be able to act as constructor" do
+    function.should respond_to :construct
+    function.construct('p1,p2', 'return 1').should be_a Moonr::JSFunction
+  end
+
   context "prototype" do
     it "should return undefined invoked with any arguments" do
       func_proto_obj.call.should == Moonr::Undefined
@@ -61,13 +66,23 @@ describe Moonr::Function do
     end
 
     it "should has method apply()" do
-      func_proto_obj.get(:apply).should be_is_a(Moonr::JSFunction)
+      func_proto_obj.get(:apply).should be_a(Moonr::JSFunction)
+      func_proto_obj.get(:apply).should_not respond_to :construct
+      func_proto_obj.get(:apply).get(:length).should == 2
+    end
+
+    it "should has method call()" do
+      func_proto_obj.get(:call).should be_a(Moonr::JSFunction)
+    end
+
+    it "should has method bind()" do
+      func_proto_obj.get(:bind).should be_a(Moonr::JSFunction)
     end
   end
 
   context "initialize" do
     it "should create a new function" do
-      func = new_func(nil, "p1", "p2", "return 1")
+      func = Moonr::JSFunction.new(nil, "p1", "p2", "return 1")
       func.should be_is_a(Moonr::JSFunction)      
 
       func.prototype.should == func_proto_obj
@@ -80,7 +95,7 @@ describe Moonr::Function do
 
       func.code.should be_a Moonr::Sources
 
-      func = new_func(nil, "p1", "p2, p3", "return 1")
+      func = Moonr::JSFunction.new(nil, "p1", "p2, p3", "return 1")
       func.get(:length).should == 3
 
       pending "Strict is not implemented yet"

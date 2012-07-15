@@ -84,7 +84,7 @@ module Moonr
     internal_property :value, nil
     internal_property :set, nil
     internal_property :get, nil
-    internal_property :writable, false
+    internal_property :writable, nil
     internal_property :enumerable, nil
     internal_property :configurable, nil
     

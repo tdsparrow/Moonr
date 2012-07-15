@@ -6,26 +6,26 @@ module Moonr
       self
     end
 
-    def jseval(env)
+    def jseval(context)
       idexpr = IdExpr.new :id => id
-      lhr = idexpr.jseval env
+      lhr = idexpr.jseval context
       
       if initialiser
-        rhs = initialiser.jseval env
+        rhs = initialiser.jseval context
         value = rhs.get_value
-        
+
         lhr.put_value value
       end
  
       @list && @list.inject(lhr) do |acc, stat|
-        stat.jseval env
+        stat.jseval context
       end
       Result.new :type => :normal, :value => :empty, :target => :empty
     end
 
     def each_id
       yield id
-      @list.each { |var| yield var.id }
+      @list && @list.each { |var| yield var.id }
     end
   end
 end

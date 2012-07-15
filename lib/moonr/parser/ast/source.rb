@@ -1,15 +1,15 @@
 module Moonr
   class Sources < ASTElem
     attr :code_type
-    def jseval(env)
-      env.decl_bind_init(self)
+    def jseval(context)
+      context.decl_bind_init(self)
       Result.new :type => :normal, :value => :empty, :target => :empty if @arg.empty?
       
       # starting to eval source elements
       @arg.inject(nil) do |head_result, stat|
         return head_result if head_result and head_result.abrupt?
 
-        tail_result = stat.jseval(env)
+        tail_result = stat.jseval(context)
         value = (head_result and tail_result.value == :empty) ? head_result.value : tail_result.value
 
         head_result = Result.new :type=> tail_result.type, :value => value, :target => tail_result.target
