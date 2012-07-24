@@ -7,7 +7,7 @@ module Moonr
       raise TypeError if not construct.is_a? JSBaseObject
       raise TypeError if not construct.respond_to? :construct
       
-      construct.construct argu
+      construct.construct argu, context, strict
     end
   end
 end

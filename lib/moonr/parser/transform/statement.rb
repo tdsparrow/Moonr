@@ -60,7 +60,7 @@ module Moonr
     end
 
     rule(:property_name => simple(:name), :param_list => simple(:param), :set_body => simple(:set)) do
-      OpenStruct.new :name => name.to_s, :param => param, :set => set
+      OpenStruct.new :name => name.to_s, :param => [param.to_s], :set => set
     end
     
     rule(:property_list => simple(:plist) ) do

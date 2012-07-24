@@ -76,18 +76,19 @@ module Moonr
     internal_property :extensible, true
     internal_property :call, nil
     internal_property :formal_param, JSList.empty
-    internal_property :code, JSSources.empty
+    internal_property :code, Sources.empty
+    internal_property :scope, Undefined
 
     property :length
 
-    def initialize param, body, env, strict
+    def initialize(param, body, scope, strict)
       super()
       self.formal_param = param
       self.code = body
-      create_function env
+      create_function scope
     end
 
-    def formal_param= args
+    def formal_param=(args)
       @internal_properties[:formal_param] = args.join(',').split(',')
     end
 
@@ -101,11 +102,30 @@ module Moonr
       return v
     end
 
-    def construct
+    def call(this, arg_list)
+      funcCtx = ExecuteContext.enter_func_code scope, code, this, arg_list
+      result = if code.eql?(Sources.empty) 
+                 Result.new :type => :normal, :value => Undefined, :target => :empty
+               else
+                 code.jseval funcCtx
+               end
+      
+      # miss exception throw
+      result.type == :return ? result.value : Undefined
+    end
+
+    def construct(param, context, strict)
+      obj = JSObject.new
+      proto = obj.get :prototype
+      obj.prototype = proto.is_a?(JSObject) ? proto : ObjectPrototype
+      result = call(obj, param)
+      
+      return result.is_a?(JSObject) ? result : obj
     end
 
     private
-    def create_function env
+    def create_function scope
+      @internal_properties[:scope] = scope
       def_own_property :length, PropDescriptor.new(:value => formal_param.length,
                                                    :writable => false,
                                                    :enumerable => false,

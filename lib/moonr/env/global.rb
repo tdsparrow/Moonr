@@ -32,6 +32,15 @@ module Moonr
     end
   end
 
+  class DeclEnvRec
+    def initialize
+      @bindings = {}
+    end
+    def has_binding?(name)
+      @bindings[name]
+    end
+  end
+
   class LexEnv
     attr_accessor :rec, :outter
     def self.get_id_ref(lex, name, strict)
@@ -48,6 +57,8 @@ module Moonr
       yield self if block_given?
     end
 
+    # create the global env #10.2.3
+    # the global object could be different from spec
     def self.global(obj)
       self.new { |lex|
         lex.rec = ObjEnvRec.new obj
@@ -57,13 +68,20 @@ module Moonr
         obj.global=lex
       }
     end
-    
+
+    def self.new_decl_env(lex_env)
+      self.new { |lex|
+        env_rec = DeclEnvRec.new
+        lex.rec = env_rec
+        outter = lex_env
+      }
+    end
   end
 
 
 
   class ExecuteContext
-    attr :lexical_env, :variable_env, :this_bind
+    attr_accessor :lexical_env, :variable_env, :this_bind
     
     def decl_bind_init(code)
       env = variable_env.rec
@@ -96,6 +114,22 @@ module Moonr
         end
         
       end
+    end
+
+    def self.enter_func_code(scope, code, this_arg, arg_list)
+      context = self.new
+      if code.strict?
+        context.this_bind = this_arg
+      elsif this_arg.null? || this_arg.undefined?
+        context.this_bind = scope.global
+        #elsif type(this_arg) is not Object
+      else
+        context.this_bind = this_arg
+      end
+      local_env = LexEnv.new_decl_env scope
+      context.lexical_env = local_env
+      context.variable_env = local_env
+      context
     end
   end
 

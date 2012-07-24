@@ -1,5 +1,5 @@
 class Moonr::ASTElem
-  def initialize arg={}
+  def initialize(arg={})
     @arg = arg
   end
 

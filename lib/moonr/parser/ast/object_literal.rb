@@ -31,10 +31,10 @@ module Moonr
         
       elsif initialiser.get
         # miss strict code 
-        closure = JSFunction.new @context.lexical_env, initialiser.get
+        closure = JSFunction.new [], initialiser.get, @context, @strict
         JSPropIdentifier.new initialiser.name, PropDescriptor.new( :get => closure, :enumerable => true, :configurable => true )
       elsif initialiser.set
-        closure = JSFunction.new @context.lexical_env, initialiser.set
+        closure = JSFunction.new initialiser.param, initialiser.set, @context, @strict
         JSPropIdentifier.new initialiser.name, PropDescriptor.new( :set => closure, :enumerable => true, :configurable => true )
       end
 

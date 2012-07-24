@@ -82,7 +82,7 @@ describe Moonr::Function do
 
   context "initialize" do
     it "should create a new function" do
-      func = Moonr::JSFunction.new(nil, "p1", "p2", "return 1")
+      func = Moonr::JSFunction.new(%w{p1 p2}, "return 1", nil, false)
       func.should be_is_a(Moonr::JSFunction)      
 
       func.prototype.should == func_proto_obj
@@ -95,7 +95,7 @@ describe Moonr::Function do
 
       func.code.should be_a Moonr::Sources
 
-      func = Moonr::JSFunction.new(nil, "p1", "p2, p3", "return 1")
+      func = Moonr::JSFunction.new(%w{p1 p2 p3}, "return 1", nil, false)
       func.get(:length).should == 3
 
       pending "Strict is not implemented yet"

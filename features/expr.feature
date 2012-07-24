@@ -48,13 +48,13 @@ Feature: Moonr eval js expression
     And i get "<result>" with property "<name>"
 
     Examples:
-      | literal                      | size | name | result    |
-      | { x: 'x',}                   |    1 | x    | x         |
-      | {}                           |    0 |      | undefined |
-      | { x: 'x', b: b }             |    2 | b    | 2         |
-      | { x: 'x', get my_a() { a;} } |    2 | x    | x         |
+      | literal                        | size | name | result    |
+      | { x: 'x',}                     |    1 | x    | x         |
+      | {}                             |    0 |      | undefined |
+      | { x: 'x', b: b }               |    2 | b    | 2         |
+      | { x: 'x', get my_a() { a;} }   |    2 | x    | x         |
       | { x:'x', set my_a(a) { 2;} } |    2 | x    | x         |
-      | { 1: 1}                      |    1 | 1    | 1         |
+      | { 1: 1}                        |    1 | 1    | 1         |
 
 
 
@@ -75,7 +75,7 @@ Feature: Moonr eval js expression
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
     Then i get the NewOp element
-    When i eval it with global execution context
+    When i eval it with execution context "var foo = function(a){return 1};"
     Then i get a JSObject result
     
     Examples:
