@@ -11,7 +11,7 @@ module Moonr
       lhr = idexpr.jseval context
       
       if initialiser
-        rhs = initialiser.jseval context
+        rhs = initialiser.is_a?(ASTElem) ? initialiser.jseval(context) : initialiser
         value = rhs.get_value
 
         lhr.put_value value

@@ -26,11 +26,6 @@ module Moonr
 
 end
 
-class String
-  def get_value
-    self
-  end
-end
 
 
 

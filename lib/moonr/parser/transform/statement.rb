@@ -120,7 +120,13 @@ module Moonr
 
     # function call
     rule(:funccall_ref => simple(:ref), :funccall_arglist => simple(:arg) ) do
-      FuncCall.new :ref => ref, :arg_list => arg
+      FuncCall.new :member_expr => ref, :argu => [arg]
+    end
+
+    rule(:call_expr => simple(:call) ) { call }
+
+    rule(:call_expr => sequence(:call) ) do
+      FuncCall.new :member_expr => call.first, :argu => call[1..-1]
     end
 
     rule(:argu_list => simple(:argu) ) do

@@ -48,13 +48,13 @@ Feature: Moonr eval js expression
     And i get "<result>" with property "<name>"
 
     Examples:
-      | literal                        | size | name | result    |
-      | { x: 'x',}                     |    1 | x    | x         |
-      | {}                             |    0 |      | undefined |
-      | { x: 'x', b: b }               |    2 | b    | 2         |
-      | { x: 'x', get my_a() { a;} }   |    2 | x    | x         |
+      | literal                      | size | name | result    |
+      | { x: 'x',}                   |    1 | x    | x         |
+      | {}                           |    0 |      | undefined |
+      | { x: 'x', b: b }             |    2 | b    | 2         |
+      | { x: 'x', get my_a() { a;} } |    2 | x    | x         |
       | { x:'x', set my_a(a) { 2;} } |    2 | x    | x         |
-      | { 1: 1}                        |    1 | 1    | 1         |
+      | { 1: 1}                      |    1 | 1    | 1         |
 
 
 
@@ -88,42 +88,67 @@ Feature: Moonr eval js expression
     Given a js literal "<literal>" is provided
     When i parse it using moonr lh_side_expr
     Then i get the FuncCall element
+    When i eval it with execution context "var foo = function(a,b) { return 1 };var bar = function(){return foo};"
+    Then i get the result "<result>"
     
     Examples:
-      | literal        |
-      | foo(whatever)  |
-      | foo(arg1,arg2) |
-      | foo()          |
+      | literal        | result |
+      | foo(whatever)  |      1 |
+      | foo(arg1,arg2) |      1 |
+      | foo()          |      1 |
+      | bar()()        |      1 |
+
 
   Scenario Outline: Moonr eval postfix expr
     Given a js literal "<literal>" is provided
     When i parse it using moonr postfix_expr
     Then i get the PostfixExpr element
+    When i eval it with execution context "var foo = 1;"
+    Then i get the result "<result>"
+    And i get the "<expectation>" from "<assertion>"
     
     Examples:
-      | literal |
-      | foo--   |
-      | foo++   |
+      | literal | result | assertion | expectation        |
+      | foo--   |      1 | foo       | (normal, 0, empty) |
+      | foo++   |      1 | foo       | (normal, 2, empty) |
+
 
   Scenario Outline: Moonr eval unary expr
     Given a js literal "<literal>" is provided
     When i parse it using moonr unary_expr
     Then i get the UnaryExpr element
+    When i eval it with execution context "<context>"
+    Then i get the result "<result>"
     
+    # add delete succeed case
     Examples:
-      | literal         |
-      | delete whatever |
-      | typeof whatever |
+      | literal         | result    | context                            |
+      | delete whatever | false     | var whatever = 'string';           |
+      | typeof whatever | string    | var whatever = 'string';           |
+      | void whatever   | undefined | var whatever = 'string';           |
+      | typeof func     | function  | var func = function() { return 0;} |
+      | typeof 1        | number    | var whatever = 'string';           |
+      | ++i             | 2         | var i = 1;                         |
+      | --i             | 0         | var i = 1;                         |
+      | +i              | -1        | var i = -1;                        |
+      | -i              | -1        | var i = 1;                         |
+      | ~i              | -2        | var i = 1;                         |
+      | !i              | false     | var i = true;                      |
+
 
   Scenario Outline: Moonr eval multiple expr
     Given a js literal "<literal>" is provided
     When i parse it using moonr additive_expr
     Then i get the BinaryExpr element
+    When i eval it with execution context "<context>"
+    Then i get the result "<result>"
     
+    # missed remainder
     Examples:
-      | literal |
-      | ad*-c   |
-      | a*b/c   |
+      | literal |             result | context                  |
+      | ad*-c   |                 -2 | var ad = 1; var c = 2;   |
+      | a*b/c   | 0.6666666666666666 | var a = 1, b = 2, c = 3; |
+
 
   Scenario Outline: Moonr eval additive expr
     Given a js literal "<literal>" is provided
@@ -131,34 +156,43 @@ Feature: Moonr eval js expression
     Then i get the BinaryExpr element
     
     Examples:
-      | literal |
-      | a-c     |
-      | a*b-c   |
-      | a*-b+c  |
-      | 1+1*2   |
+      | literal | result | context                    |
+      | a-c     |     -1 | var a = 1, c = 2;          |
+      | a*b-c   |   -0.8 | var a = 1, b = 0.2, c = 1; |
+      | a*-b+c  |     -3 | var a = 2, b = 3, c = 3;   |
+      | 1+1*2   |      3 | var a = 1;                 |
+
 
   Scenario Outline: Moonr eval bitwise shift expr
     Given a js literal "<literal>" is provided
     When i parse it using moonr relational_expr
     Then i get the BinaryExpr element
-    
+    When i eval it with execution context "<context>"
+    Then i get the result "<result>"
+
+    # todo >>>
     Examples:
-      | literal |
-      | 1<<1+2  |
-      | a<<2+1  |
-      | a>>c    |
+      | literal | result | context             |
+      | 1<<1+2  |      8 | var a = 1;          |
+      | a<<2+1  |     16 | var a = 2;          |
+      | a>>c    |      4 | var a = 18, c = 2;  |
+      | a>>c    |     -5 | var a = -18, c = 2; |
+      #  | a>>>c   |        | var a = -18, c = 2; |
+
 
   Scenario Outline: Moonr eval relational expr
     Given a js literal "<literal>" is provided
     When i parse it using moonr equality_expr
     Then i get the BinaryExpr element
+    When i eval it with execution context "<context>"
+    Then i get the result "<result>"
     
     Examples:
-      | literal        |
-      | 1< 2           |
-      | a<2+1          |
-      | a>c            |
-      | a instanceof 1 |
+      | literal        | result | context    |
+      | 1< 2           | true   | var a = 1; |
+      | a<2+1          |        |            |
+      | a>c            |        |            |
+      | a instanceof 1 |        |            |
 
   Scenario Outline: Moonr eval equality expr
     Given a js literal "<literal>" is provided

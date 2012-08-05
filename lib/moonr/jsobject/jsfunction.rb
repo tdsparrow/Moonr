@@ -74,7 +74,7 @@ module Moonr
     internal_property :clazz, 'Function'
     internal_property :prototype, FunctionPrototype
     internal_property :extensible, true
-    internal_property :call, nil
+    #internal_property :call, nil
     internal_property :formal_param, JSList.empty
     internal_property :code, Sources.empty
     internal_property :scope, Undefined

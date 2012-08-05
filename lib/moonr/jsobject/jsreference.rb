@@ -56,6 +56,10 @@ module Moonr
       base.nil?
     end
 
+    def is_strict_ref?
+      strict == true
+    end
+
     def to_s
       "This is a refernce to value: #{get_value.to_s}"
     end

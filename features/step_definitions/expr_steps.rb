@@ -17,15 +17,8 @@ Then /^i get the (\w+) element$/ do |elem|
   result.should be_a Moonr.const_get(elem)
 end
 
-Then /^i get the proc$/ do 
-  result.should be_a Moonr::NewOp
-end
-
-When /^i eval it with global env$/ do
-end
-
 When /^i eval it with global execution context$/ do
-  jseval(Moonr::GlobalContext.new)
+  jseval(globalenv)
 end
 
 Then /^i get a (\w+) result$/ do |type|
@@ -42,11 +35,15 @@ end
 
 When /^i eval it with execution context "([^"]*)"$/ do |context|
   prog = Moonr::Parser.parse(context)
-  env = Moonr::GlobalContext.new
-  prog.jseval(env)
-  jseval(env)
+  prog.jseval(globalenv)
+  jseval(globalenv)
 end
 
 Then /^i get "([^"]*)" with property "([^"]*)"$/ do |ret, prop|
   result.get(prop).to_s.should == ret
+end
+
+Then /^i get the "([^"]*)" from "([^"]*)"$/ do |expect, assert|
+  prog = Moonr::Parser.parse(assert)
+  prog.jseval(globalenv).to_s.should == expect
 end

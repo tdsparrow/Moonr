@@ -28,10 +28,9 @@ module MoonrHelper
     @js_result = result.jseval(env)
   end
 
-  def globalenv()
+  def globalenv
     @js_globalenv ||= Moonr::GlobalContext.new
   end
-
 
 end
 

@@ -1,7 +1,16 @@
 module Moonr
-  class ObjEnvRec
+  class EnvRec; end
+  class ObjEnvRec < EnvRec
+    attr_accessor :provide_this
+    
+    # todo broken spec?
+    # used for easy to get global object
+    attr :obj
+
+
     def initialize(obj)
       @obj = obj
+      @provide_this = false
     end
 
     def has_binding?(name)
@@ -14,7 +23,10 @@ module Moonr
                                                      :writable => true,
                                                      :enumerable => true,
                                                      :configurable => configurable), true
+    end
 
+    def delete_binding(name)
+      @obj.delete name, false
     end
 
     def set_mutable_binding(name, value, strict)
@@ -30,19 +42,28 @@ module Moonr
         throw ReferenceError
       end
     end
+
+    def implicit_this_value
+      provide_this ? @obj : Undefined
+    end
+
   end
 
-  class DeclEnvRec
+  class DeclEnvRec < EnvRec
+
     def initialize
       @bindings = {}
     end
+
     def has_binding?(name)
       @bindings[name]
     end
+
   end
 
   class LexEnv
     attr_accessor :rec, :outter
+
     def self.get_id_ref(lex, name, strict)
       return JSReference.new(Undefined, name, strict) if lex.null?
       
@@ -55,6 +76,10 @@ module Moonr
 
     def initialize
       yield self if block_given?
+    end
+
+    def global
+      outter.null? ? rec.obj : outter.global
     end
 
     # create the global env #10.2.3
@@ -73,7 +98,7 @@ module Moonr
       self.new { |lex|
         env_rec = DeclEnvRec.new
         lex.rec = env_rec
-        outter = lex_env
+        lex.outter = lex_env
       }
     end
   end

@@ -8,8 +8,24 @@ module Moonr
     end
 
     def undefined?
-      (! self.is_a?(NilClass) ) and self.equal?(Undefined)
+      (! self.is_a?(NilClass) ) && self.equal?(Undefined)
     end
+
+    def is_callable?
+      self.is_a?(JSBaseObject) && self.respond_to?(:call)
+    end
+
+    def jstype
+      case self
+      when Fixnum then Moonr::Number
+      else self.class
+      end
+    end
+
+    def get_value
+      self
+    end
+
   end
   
   module Objective
@@ -159,6 +175,18 @@ module Moonr
       end
     end
 
+    def delete(name, strict)
+      desc = get_own_property name
+      return ture if desc.undefined?
+
+      if desc.configurable
+        @properties.delete name
+        return true
+      else
+        raise TypeError if strict
+      end
+      false
+    end
   end
 
   class JSBaseObject
@@ -203,5 +231,9 @@ module Moonr
   def Null.method_missing(sym, *args, &block) 
     Null
   end
+
+  class Boolean; end
+
+  class Number; end
   
 end

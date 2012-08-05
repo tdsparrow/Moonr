@@ -147,7 +147,7 @@ module Moonr
     # 
     #  new_expr share same member_expr prefix with call_expr
     rule(:lh_side_expr) {
-      call_expr |
+      call_expr.as(:call_expr) |
       new_expr
     }
 
